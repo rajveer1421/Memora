@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Register — Memora{% endblock %}
+{% block head %}
+<style>
+    .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);position:relative}
+    .upload-zone:hover,.upload-zone.dragover{border-color:var(--sage);background:var(--sage-light)}
+    .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+    .upload-zone .icon{font-size:2rem;margin-bottom:.5rem}
+    .upload-zone .label{font-size:.85rem;color:var(--grey)}
+    .upload-zone .label strong{color:var(--sage)}
+    .preview-img{max-width:200px;max-height:200px;border-radius:var(--radius);margin-top:1rem;display:none;object-fit:cover;border:2px solid var(--sage-light)}
+    .camera-section{margin-top:.75rem}
+    .camera-feed{width:100%;max-width:400px;border-radius:var(--radius);background:#000;display:none}
+    .voice-recorder{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+    .rec-btn{width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;font-size:1.2rem;transition:all .2s;display:flex;align-items:center;justify-content:center}
+    .rec-btn.idle{background:var(--sage-light);color:var(--sage)}
+    .rec-btn.recording{background:var(--danger);color:#fff;animation:recPulse 1s infinite}
+    @keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,53,69,.4)}50%{box-shadow:0 0 0 10px rgba(220,53,69,0)}}
+    .rec-status{font-size:.82rem;color:var(--grey)}
+    .audio-preview{margin-top:.5rem;width:100%}
+    .step-indicator{display:flex;gap:.5rem;margin-bottom:1.5rem}
+    .step{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .3s}
+    .step.active{background:var(--sage)}
+    .step.done{background:var(--sage-soft)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>👤 Register a Person</h1>
+    <p>Add a family member or caregiver with their photo and a personal voice message.</p>
+</div>
+
+<div class="step-indicator">
+    <div class="step active" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+</div>
+
+<form id="regForm" class="card" style="max-width:560px">
+    <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" placeholder="e.g. Sarah Johnson" required>
+    </div>
+
+    <div class="form-group">
+        <label>Photo</label>
+        <div class="upload-zone" id="dropZone">
+            <input type="file" id="photoInput" accept="image/*">
+            <div class="icon">📸</div>
+            <div class="label">Drag & drop a photo or <strong>browse</strong></div>
+        </div>
+        <img id="photoPreview" class="preview-img" alt="Preview">
+        <div class="camera-section">
+            <button type="button" class="btn btn-outline btn-sm" id="camBtn" style="margin-top:.5rem">📷 Use Camera</button>
+            <video id="camFeed" class="camera-feed" autoplay playsinline></video>
+            <button type="button" class="btn btn-sm btn-primary" id="captureBtn" style="display:none;margin-top:.5rem">Capture Photo</button>
+            <canvas id="camCanvas" style="display:none"></canvas>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Voice Message</label>
+        <p style="font-size:.8rem;color:var(--grey);margin-bottom:.5rem">Record a message like "This is your daughter, Sarah"</p>
+        <div class="voice-recorder">
+            <button type="button" class="rec-btn idle" id="recBtn">🎙️</button>
+            <span class="rec-status" id="recStatus">Tap to record</span>
+        </div>
+        <audio id="audioPreview" class="audio-preview" controls style="display:none"></audio>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg" style="width:100%" id="submitBtn">Register Person</button>
+</form>
+
+<div class="toast-box" id="toasts"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let photoFile=null,voiceBlob=null,mediaRecorder=null,audioChunks=[],camStream=null;
+
+function toast(msg,ok){
+    let t=document.createElement('div');
+    t.className='toast '+(ok?'toast-ok':'toast-err');
+    t.textContent=msg;
+    document.getElementById('toasts').appendChild(t);
+    setTimeout(()=>t.remove(),3000);
+}
+
+function updateSteps(){
+    document.getElementById('s1').className='step '+(document.getElementById('name').value?'done':'active');
+    document.getElementById('s2').className='step '+(photoFile?'done':(document.getElementById('name').value?'active':''));
+    document.getElementById('s3').className='step '+(voiceBlob?'done':(photoFile?'active':''));
+}
+
+document.getElementById('name').addEventListener('input',updateSteps);
+
+let dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files[0])handlePhoto(e.dataTransfer.files[0])});
+
+document.getElementById('photoInput').addEventListener('change',e=>{if(e.target.files[0])handlePhoto(e.target.files[0])});
+
+function handlePhoto(file){
+    photoFile=file;
+    let r=new FileReader();
+    r.onload=e=>{let p=document.getElementById('photoPreview');p.src=e.target.result;p.style.display='block'};
+    r.readAsDataURL(file);
+    updateSteps();
+}
+
+document.getElementById('camBtn').addEventListener('click',async()=>{
+    let feed=document.getElementById('camFeed');
+    if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;feed.style.display='none';document.getElementById('captureBtn').style.display='none';return}
+    try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});feed.srcObject=camStream;feed.style.display='block';document.getElementById('captureBtn').style.display='inline-flex'}catch(e){toast('Camera access denied',false)}
+});
+
+document.getElementById('captureBtn').addEventListener('click',()=>{
+    let v=document.getElementById('camFeed'),c=document.getElementById('camCanvas');
+    c.width=v.videoWidth;c.height=v.videoHeight;
+    c.getContext('2d').drawImage(v,0,0);
+    c.toBlob(b=>{photoFile=new File([b],'camera.jpg',{type:'image/jpeg'});
+    let p=document.getElementById('photoPreview');p.src=URL.createObjectURL(b);p.style.display='block';
+    camStream.getTracks().forEach(t=>t.stop());camStream=null;
+    document.getElementById('camFeed').style.display='none';document.getElementById('captureBtn').style.display='none';
+    updateSteps()},'image/jpeg',.9);
+});
+
+document.getElementById('recBtn').addEventListener('click',async()=>{
+    let btn=document.getElementById('recBtn'),status=document.getElementById('recStatus');
+    if(mediaRecorder&&mediaRecorder.state==='recording'){
+        mediaRecorder.stop();btn.className='rec-btn idle';btn.textContent='🎙️';status.textContent='Recording saved';return}
+    try{
+        let stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        audioChunks=[];
+        mediaRecorder=new MediaRecorder(stream);
+        mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+        mediaRecorder.onstop=()=>{
+            voiceBlob=new Blob(audioChunks,{type:'audio/webm'});
+            let a=document.getElementById('audioPreview');a.src=URL.createObjectURL(voiceBlob);a.style.display='block';
+            stream.getTracks().forEach(t=>t.stop());updateSteps()};
+        mediaRecorder.start();btn.className='rec-btn recording';btn.textContent='⏹';status.textContent='Recording...';
+    }catch(e){toast('Microphone access denied',false)}
+});
+
+document.getElementById('regForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    let name=document.getElementById('name').value.trim();
+    if(!name){toast('Please enter a name',false);return}
+    if(!photoFile){toast('Please add a photo',false);return}
+    if(!voiceBlob){toast('Please record a voice message',false);return}
+
+    let btn=document.getElementById('submitBtn');
+    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Processing...';
+
+    let fd=new FormData();
+    fd.append('name',name);fd.append('file',photoFile);fd.append('voice',new File([voiceBlob],name.replace(/\s+/g,'_')+'.webm',{type:'audio/webm'}));
+
+    try{
+        let res=await fetch('/register',{method:'POST',body:fd});
+        let data=await res.json();
+        if(data.status==='success'){toast(data.message,true);document.getElementById('regForm').reset();photoFile=null;voiceBlob=null;
+        document.getElementById('photoPreview').style.display='none';document.getElementById('audioPreview').style.display='none';
+        document.getElementById('recStatus').textContent='Tap to record';updateSteps()}
+        else{toast(data.message,false)}
+    }catch(err){toast('Network error',false)}
+    btn.disabled=false;btn.textContent='Register Person';
+});
+</script>
+{% endblock %}
