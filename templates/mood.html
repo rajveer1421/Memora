@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Mood Tracking — Memora{% endblock %}
+{% block head %}
+<style>
+    .mood-wrap{max-width:620px}
+    .mood-input-area{position:relative}
+    .mood-input-area textarea{min-height:120px;resize:vertical;padding-right:50px}
+    .mood-submit{position:absolute;bottom:12px;right:12px}
+    .emotion-result{animation:fadeUp .4s ease;margin-top:1.25rem}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .emotion-display{display:flex;align-items:center;gap:1rem;padding:1.25rem}
+    .emotion-emoji{font-size:2.5rem;width:60px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
+    .emotion-label{font-family:'DM Serif Display',serif;font-size:1.3rem;text-transform:capitalize}
+    .emotion-score{font-size:.82rem;color:var(--grey)}
+    .score-bar{height:8px;border-radius:4px;background:var(--border);margin-top:6px;overflow:hidden;max-width:200px}
+    .score-fill{height:100%;border-radius:4px;transition:width .6s ease}
+    .alert-card{padding:1rem;border-radius:var(--radius);background:var(--danger-bg);border:1px solid var(--danger);color:var(--danger);margin-top:1rem;font-size:.85rem;display:flex;align-items:flex-start;gap:.75rem;animation:fadeUp .4s ease}
+    .alert-card .alert-icon{font-size:1.5rem;flex-shrink:0}
+    .history-section{margin-top:2rem}
+    .history-section h2{font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:1rem}
+    .mood-entry{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.85rem}
+    .mood-entry:last-child{border-bottom:none}
+    .mood-entry:hover{background:var(--bg)}
+    .me-emoji{font-size:1.2rem;flex-shrink:0}
+    .me-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--grey)}
+    .me-label{font-weight:600;font-size:.78rem;text-transform:capitalize}
+    .me-time{font-size:.72rem;color:var(--grey-light);white-space:nowrap}
+    .me-alert{color:var(--danger);font-size:.72rem;font-weight:600}
+    .empty-mood{text-align:center;padding:2rem;color:var(--grey)}
+    .emotion-colors{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
+    .e-tag{padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:600}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>💬 Mood Tracking</h1>
+    <p>Analyze emotional state from text using NLP. Type or transcribe speech below.</p>
+</div>
+
+<div class="mood-wrap">
+    <div class="card">
+        <div class="form-group">
+            <label>What did the patient say?</label>
+            <div class="mood-input-area">
+                <textarea id="moodText" placeholder="Type or paste what the patient said... e.g. 'I feel scared, I don't know where I am'"></textarea>
+            </div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn btn-primary" id="analyzeBtn">🧠 Analyze Mood</button>
+            <button class="btn btn-outline btn-sm" id="micBtn">🎙️ Use Microphone</button>
+        </div>
+    </div>
+
+    <div id="resultArea"></div>
+    <div id="alertArea"></div>
+
+    <div class="history-section">
+        <h2>Mood History</h2>
+        <div class="card" id="historyList">
+            <div class="empty-mood"><span style="font-size:2rem">📊</span><p style="margin-top:.5rem">No mood entries yet</p></div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-box" id="toasts"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EMOJIS={joy:'😊',sadness:'😢',fear:'😨',anger:'😠',surprise:'😲',disgust:'🤢',neutral:'😐'};
+const COLORS={joy:'--sage',sadness:'--purple',fear:'--danger',anger:'--danger',surprise:'--gold',disgust:'--grey',neutral:'--grey'};
+const COLOR_BG={joy:'var(--sage-light)',sadness:'var(--purple-bg)',fear:'var(--danger-bg)',anger:'var(--danger-bg)',surprise:'var(--gold-bg)',disgust:'var(--bg)',neutral:'var(--bg)'};
+
+function toast(m,ok){let t=document.createElement('div');t.className='toast '+(ok?'toast-ok':'toast-err');t.textContent=m;document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),3000)}
+
+document.getElementById('analyzeBtn').addEventListener('click',analyzeMood);
+
+async function analyzeMood(){
+    let text=document.getElementById('moodText').value.trim();
+    if(!text){toast('Please enter some text',false);return}
+
+    let btn=document.getElementById('analyzeBtn');
+    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyzing...';
+    document.getElementById('resultArea').innerHTML='';
+    document.getElementById('alertArea').innerHTML='';
+
+    try{
+        let res=await fetch('/api/mood',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+        let d=await res.json();
+
+        if(d.status==='success'){
+            let em=d.emotion,sc=Math.round(d.score*100),emoji=EMOJIS[em]||'😐';
+            let fillColor=`var(${COLORS[em]||'--grey'})`;
+
+            document.getElementById('resultArea').innerHTML=`
+                <div class="card emotion-result">
+                    <div class="emotion-display">
+                        <div class="emotion-emoji" style="background:${COLOR_BG[em]||'var(--bg)'}">${emoji}</div>
+                        <div>
+                            <div class="emotion-label">${em}</div>
+                            <div class="emotion-score">Confidence: ${sc}%</div>
+                            <div class="score-bar"><div class="score-fill" style="width:${sc}%;background:${fillColor}"></div></div>
+                        </div>
+                    </div>
+                </div>`;
+
+            if(d.alert){
+                document.getElementById('alertArea').innerHTML=`
+                    <div class="alert-card">
+                        <div class="alert-icon">⚠️</div>
+                        <div><strong>Caregiver Alert Triggered</strong><br>Detected <strong>${em}</strong> with ${sc}% confidence. A reassurance message is being played.</div>
+                    </div>`;
+                speakReassurance();
+            }
+            loadHistory();
+        }else{toast(d.message,false)}
+    }catch(e){toast('Network error',false)}
+    btn.disabled=false;btn.innerHTML='🧠 Analyze Mood';
+}
+
+function speakReassurance(){
+    if('speechSynthesis' in window){
+        let msgs=["Everything is okay. You are safe and loved.","Don't worry, your family is nearby. You are not alone.","Take a deep breath. Someone who cares about you is coming."];
+        let u=new SpeechSynthesisUtterance(msgs[Math.floor(Math.random()*msgs.length)]);
+        u.rate=0.8;u.pitch=1.0;u.volume=1;
+        speechSynthesis.speak(u);
+    }
+}
+
+let recognition=null;
+document.getElementById('micBtn').addEventListener('click',()=>{
+    if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){toast('Speech recognition not supported',false);return}
+    let SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(recognition){recognition.stop();recognition=null;document.getElementById('micBtn').innerHTML='🎙️ Use Microphone';return}
+    recognition=new SR();recognition.continuous=false;recognition.interimResults=false;recognition.lang='en-US';
+    recognition.onresult=e=>{document.getElementById('moodText').value=e.results[0][0].transcript;recognition=null;document.getElementById('micBtn').innerHTML='🎙️ Use Microphone'};
+    recognition.onerror=()=>{recognition=null;document.getElementById('micBtn').innerHTML='🎙️ Use Microphone'};
+    recognition.onend=()=>{recognition=null;document.getElementById('micBtn').innerHTML='🎙️ Use Microphone'};
+    recognition.start();
+    document.getElementById('micBtn').innerHTML='⏹ Listening...';
+});
+
+async function loadHistory(){
+    try{
+        let r=await fetch('/api/mood/history');let data=await r.json();
+        let list=document.getElementById('historyList');
+        if(data.length===0){list.innerHTML='<div class="empty-mood"><span style="font-size:2rem">📊</span><p style="margin-top:.5rem">No mood entries yet</p></div>';return}
+        list.innerHTML=data.slice().reverse().slice(0,20).map(e=>{
+            let emoji=EMOJIS[e.emotion]||'😐';
+            let dt=new Date(e.timestamp);
+            let time=dt.toLocaleDateString()+' '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+            return `<div class="mood-entry"><span class="me-emoji">${emoji}</span><span class="me-text">${e.text}</span><span class="me-label" style="color:var(${COLORS[e.emotion]||'--grey'})">${e.emotion}</span>${e.alert_triggered?'<span class="me-alert">⚠️ Alert</span>':''}<span class="me-time">${time}</span></div>`;
+        }).join('');
+    }catch(e){}
+}
+
+loadHistory();
+</script>
+{% endblock %}

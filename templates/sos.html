@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}SOS & Geofence — Memora{% endblock %}
+{% block head %}
+<style>
+    .coming-soon{text-align:center;padding:3rem 1rem}
+    .cs-icon{font-size:4rem;margin-bottom:1.5rem;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    .cs-title{font-family:'DM Serif Display',serif;font-size:1.8rem;margin-bottom:.5rem;color:var(--charcoal)}
+    .cs-sub{color:var(--grey);font-size:.92rem;max-width:440px;margin:0 auto 2.5rem;line-height:1.6}
+    .roadmap{max-width:480px;margin:0 auto}
+    .roadmap-item{display:flex;gap:1rem;padding-bottom:1.5rem;position:relative}
+    .roadmap-item:not(:last-child)::before{content:'';position:absolute;left:19px;top:40px;bottom:0;width:2px;background:var(--border)}
+    .rm-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;z-index:1}
+    .rm-dot.done{background:var(--sage-light);border:2px solid var(--sage)}
+    .rm-dot.progress{background:var(--gold-bg);border:2px solid var(--gold);animation:pulse 2s infinite}
+    .rm-dot.pending{background:var(--bg);border:2px solid var(--border)}
+    .rm-body h3{font-size:.92rem;font-weight:600;margin-bottom:2px}
+    .rm-body p{font-size:.8rem;color:var(--grey);line-height:1.5}
+    .rm-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;margin-left:6px}
+    .rm-badge.done{background:var(--sage-light);color:var(--sage)}
+    .rm-badge.wip{background:var(--gold-bg);color:var(--gold)}
+    .rm-badge.soon{background:var(--bg);color:var(--grey-light)}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,.3)}50%{box-shadow:0 0 0 8px rgba(212,168,83,0)}}
+    .sos-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-top:2rem;max-width:700px;margin-left:auto;margin-right:auto}
+    .sos-card{text-align:center;padding:1.5rem 1rem;border-radius:var(--radius);border:1px dashed var(--border);background:var(--card)}
+    .sos-card .icon{font-size:1.8rem;margin-bottom:.5rem}
+    .sos-card h4{font-size:.88rem;margin-bottom:.25rem}
+    .sos-card p{font-size:.78rem;color:var(--grey)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="coming-soon">
+    <div class="cs-icon">🛡️</div>
+    <h1 class="cs-title">SOS & Geofencing</h1>
+    <p class="cs-sub">Advanced safety features for patient protection are under active development. Here's our roadmap:</p>
+
+    <div class="roadmap">
+        <div class="roadmap-item">
+            <div class="rm-dot done">✓</div>
+            <div class="rm-body"><h3>Face Recognition System <span class="rm-badge done">Complete</span></h3><p>DeepFace + ArcFace with multi-strategy detection pipeline.</p></div>
+        </div>
+        <div class="roadmap-item">
+            <div class="rm-dot done">✓</div>
+            <div class="rm-body"><h3>Mood Tracking <span class="rm-badge done">Complete</span></h3><p>NLP-based emotion detection with caregiver alerts.</p></div>
+        </div>
+        <div class="roadmap-item">
+            <div class="rm-dot progress">🔧</div>
+            <div class="rm-body"><h3>Panic Button <span class="rm-badge wip">In Progress</span></h3><p>One-touch SOS alert with instant caregiver notification via SMS.</p></div>
+        </div>
+        <div class="roadmap-item">
+            <div class="rm-dot pending">📍</div>
+            <div class="rm-body"><h3>Geofence Zones <span class="rm-badge soon">Planned</span></h3><p>Define safe boundaries on a map. Auto-alert when patient exits zone.</p></div>
+        </div>
+        <div class="roadmap-item">
+            <div class="rm-dot pending">📱</div>
+            <div class="rm-body"><h3>Auto SMS Alerts <span class="rm-badge soon">Planned</span></h3><p>Automatic Twilio SMS to emergency contacts with GPS coordinates.</p></div>
+        </div>
+    </div>
+
+    <div class="sos-preview">
+        <div class="sos-card">
+            <div class="icon">🆘</div>
+            <h4>Panic Button</h4>
+            <p>Large, accessible button for emergencies</p>
+        </div>
+        <div class="sos-card">
+            <div class="icon">🗺️</div>
+            <h4>Safe Zone Map</h4>
+            <p>Draw boundaries around home and known areas</p>
+        </div>
+        <div class="sos-card">
+            <div class="icon">📲</div>
+            <h4>Instant Alerts</h4>
+            <p>SMS with live location to caregivers</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
