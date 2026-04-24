@@ -1,0 +1,7 @@
+flask
+deepface
+scipy
+numpy
+transformers
+torch
+gunicorn
