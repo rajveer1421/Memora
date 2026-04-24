@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Reminders — Memora{% endblock %}
+{% block head %}
+<style>
+    .reminder-tabs{display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap}
+    .tab-btn{padding:8px 16px;border-radius:20px;font-size:.8rem;font-weight:600;border:1.5px solid var(--border);background:var(--card);color:var(--grey);cursor:pointer;transition:all .2s}
+    .tab-btn.active{background:var(--sage);color:#fff;border-color:var(--sage)}
+    .tab-btn:hover:not(.active){border-color:var(--sage);color:var(--sage)}
+    .reminder-item{display:flex;align-items:flex-start;gap:1rem;padding:1rem;border-bottom:1px solid var(--border);transition:background .2s}
+    .reminder-item:last-child{border-bottom:none}
+    .reminder-item:hover{background:var(--bg)}
+    .r-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+    .r-icon.med{background:rgba(74,124,89,.1)}.r-icon.meal{background:rgba(212,168,83,.1)}.r-icon.appt{background:rgba(124,92,191,.1)}
+    .r-body{flex:1;min-width:0}
+    .r-title{font-weight:600;font-size:.9rem;margin-bottom:2px}
+    .r-meta{font-size:.78rem;color:var(--grey);display:flex;gap:.75rem;flex-wrap:wrap}
+    .r-days{display:flex;gap:3px;margin-top:4px}
+    .r-day{width:24px;height:24px;border-radius:50%;font-size:.65rem;display:flex;align-items:center;justify-content:center;background:var(--border);color:var(--grey);font-weight:600}
+    .r-day.on{background:var(--sage-light);color:var(--sage)}
+    .r-del{background:none;border:none;color:var(--grey-light);cursor:pointer;font-size:1rem;padding:4px;transition:color .2s}
+    .r-del:hover{color:var(--danger)}
+    .add-form{display:none;margin-bottom:1.5rem}
+    .add-form.show{display:block}
+    .day-picker{display:flex;gap:4px;flex-wrap:wrap}
+    .day-picker label{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;color:var(--grey)}
+    .day-picker input{display:none}
+    .day-picker input:checked+span{background:var(--sage);color:#fff;border-color:var(--sage)}
+    .day-picker label:has(input:checked){background:var(--sage);color:#fff;border-color:var(--sage)}
+    .empty-state{text-align:center;padding:3rem 1rem;color:var(--grey)}
+    .empty-state .icon{font-size:2.5rem;margin-bottom:.75rem}
+    .form-row{display:flex;gap:.75rem}
+    @media(max-width:480px){.form-row{flex-direction:column}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>🔔 Smart Reminders</h1>
+    <p>Manage medication, meal, and appointment reminders.</p>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+    <div class="reminder-tabs">
+        <button class="tab-btn active" data-type="all">All</button>
+        <button class="tab-btn" data-type="medication">💊 Medication</button>
+        <button class="tab-btn" data-type="meal">🍽️ Meals</button>
+        <button class="tab-btn" data-type="appointment">📅 Appointments</button>
+    </div>
+    <button class="btn btn-primary btn-sm" id="toggleAdd">+ Add Reminder</button>
+</div>
+
+<div class="card add-form" id="addForm">
+    <div class="form-row">
+        <div class="form-group" style="flex:1"><label>Title</label><input type="text" id="rTitle" placeholder="e.g. Morning Medicine"></div>
+        <div class="form-group" style="width:120px"><label>Time</label><input type="time" id="rTime" value="08:00"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group" style="flex:1"><label>Type</label><select id="rType"><option value="medication">💊 Medication</option><option value="meal">🍽️ Meal</option><option value="appointment">📅 Appointment</option></select></div>
+        <div class="form-group" style="flex:1"><label>Notes</label><input type="text" id="rNotes" placeholder="Optional details"></div>
+    </div>
+    <div class="form-group">
+        <label>Days</label>
+        <div class="day-picker" id="dayPicker">
+            <label><input type="checkbox" value="Mon" checked><span>Mo</span></label>
+            <label><input type="checkbox" value="Tue" checked><span>Tu</span></label>
+            <label><input type="checkbox" value="Wed" checked><span>We</span></label>
+            <label><input type="checkbox" value="Thu" checked><span>Th</span></label>
+            <label><input type="checkbox" value="Fri" checked><span>Fr</span></label>
+            <label><input type="checkbox" value="Sat" checked><span>Sa</span></label>
+            <label><input type="checkbox" value="Sun" checked><span>Su</span></label>
+        </div>
+    </div>
+    <button class="btn btn-primary" id="saveReminder" style="width:100%">Save Reminder</button>
+</div>
+
+<div class="card" id="reminderList"></div>
+<div class="toast-box" id="toasts"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ICONS={medication:'💊',meal:'🍽️',appointment:'📅'};
+const ICON_CLASS={medication:'med',meal:'meal',appointment:'appt'};
+let currentFilter='all',reminders=[];
+
+function toast(m,ok){let t=document.createElement('div');t.className='toast '+(ok?'toast-ok':'toast-err');t.textContent=m;document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),3000)}
+
+document.getElementById('toggleAdd').addEventListener('click',()=>document.getElementById('addForm').classList.toggle('show'));
+
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');currentFilter=b.dataset.type;render();
+}));
+
+async function loadReminders(){
+    try{let r=await fetch('/api/reminders');reminders=await r.json();render()}catch(e){toast('Failed to load',false)}
+}
+
+function render(){
+    let list=document.getElementById('reminderList');
+    let filtered=currentFilter==='all'?reminders:reminders.filter(r=>r.type===currentFilter);
+    if(filtered.length===0){list.innerHTML='<div class="empty-state"><div class="icon">🔔</div><p>No reminders yet</p></div>';return}
+    list.innerHTML=filtered.map(r=>`
+        <div class="reminder-item">
+            <div class="r-icon ${ICON_CLASS[r.type]||'med'}">${ICONS[r.type]||'📌'}</div>
+            <div class="r-body">
+                <div class="r-title">${r.title}</div>
+                <div class="r-meta"><span>⏰ ${r.time}</span>${r.notes?'<span>'+r.notes+'</span>':''}</div>
+                <div class="r-days">${DAYS.map(d=>'<div class="r-day'+(r.days.includes(d)?' on':'')+'">'+d.slice(0,2)+'</div>').join('')}</div>
+            </div>
+            <button class="r-del" onclick="deleteReminder('${r.id}')">✕</button>
+        </div>`).join('');
+}
+
+document.getElementById('saveReminder').addEventListener('click',async()=>{
+    let title=document.getElementById('rTitle').value.trim();
+    if(!title){toast('Enter a title',false);return}
+    let days=[...document.querySelectorAll('#dayPicker input:checked')].map(i=>i.value);
+    let body={title,time:document.getElementById('rTime').value,type:document.getElementById('rType').value,notes:document.getElementById('rNotes').value,days};
+    try{
+        let r=await fetch('/api/reminders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        let d=await r.json();
+        if(d.status==='success'){toast('Reminder added',true);document.getElementById('rTitle').value='';document.getElementById('rNotes').value='';document.getElementById('addForm').classList.remove('show');loadReminders()}
+    }catch(e){toast('Failed to save',false)}
+});
+
+async function deleteReminder(id){
+    try{await fetch('/api/reminders/'+id,{method:'DELETE'});toast('Deleted',true);loadReminders()}catch(e){toast('Failed',false)}
+}
+
+loadReminders();
+</script>
+{% endblock %}
