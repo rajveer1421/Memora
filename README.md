@@ -1,4 +1,4 @@
-# ARKA - Alzheimer's Recognition & Knowledge Assistant
+# Memora — Smart Recognition System for Alzheimer's Patients
 
 ## 📖 Project Overview
 ARKA is a specialized memory care platform designed to assist Alzheimer's patients in their daily lives while providing peace of mind to their caretakers. The application leverages advanced AI to help patients recognize loved ones and everyday objects, bridging the gap caused by memory loss.
