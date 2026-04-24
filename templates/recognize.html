@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Recognize — Memora{% endblock %}
+{% block head %}
+<style>
+    .recognize-wrap{max-width:560px}
+    .video-container{position:relative;border-radius:var(--radius);overflow:hidden;background:#1a1a2e;aspect-ratio:4/3;margin-bottom:1rem}
+    .video-container video{width:100%;height:100%;object-fit:cover}
+    .video-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);color:#fff;font-size:.9rem;flex-direction:column;gap:.5rem}
+    .video-overlay.hidden{display:none}
+    .scan-line{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--sage),transparent);animation:scanDown 2s linear infinite;display:none}
+    @keyframes scanDown{0%{top:0}100%{top:100%}}
+    .cam-controls{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+    .result-card{animation:fadeUp .4s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .match-info{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+    .match-avatar{width:64px;height:64px;border-radius:50%;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0}
+    .match-name{font-family:'DM Serif Display',serif;font-size:1.3rem}
+    .match-conf{font-size:.82rem;color:var(--grey)}
+    .conf-bar{height:6px;border-radius:3px;background:var(--border);margin-top:4px;overflow:hidden}
+    .conf-fill{height:100%;border-radius:3px;background:var(--sage);transition:width .6s ease}
+    .alert-banner{padding:1rem;border-radius:var(--radius);background:var(--danger-bg);border:1px solid var(--danger);color:var(--danger);display:none;margin-top:1rem;font-size:.85rem;animation:fadeUp .4s ease}
+    .upload-alt{margin-top:1rem;text-align:center}
+    .upload-alt input[type=file]{display:none}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <h1>🔍 Live Recognition</h1>
+    <p>Identify a person using your camera or upload a photo.</p>
+</div>
+
+<div class="recognize-wrap">
+    <div class="video-container" id="vidBox">
+        <video id="camVideo" autoplay playsinline></video>
+        <div class="scan-line" id="scanLine"></div>
+        <div class="video-overlay" id="camOverlay">
+            <span style="font-size:2rem">📷</span>
+            <span>Camera not started</span>
+        </div>
+    </div>
+
+    <div class="cam-controls">
+        <button class="btn btn-primary" id="startCam">📷 Start Camera</button>
+        <button class="btn btn-outline" id="captureBtn" disabled>🔍 Capture & Identify</button>
+        <button class="btn btn-outline btn-sm" id="stopCam" style="display:none">⏹ Stop</button>
+    </div>
+
+    <div class="upload-alt">
+        <label class="btn btn-outline btn-sm" for="uploadPhoto" style="cursor:pointer">📁 Or upload a photo</label>
+        <input type="file" id="uploadPhoto" accept="image/*">
+    </div>
+
+    <canvas id="snapCanvas" style="display:none"></canvas>
+
+    <div id="resultArea"></div>
+    <div class="alert-banner" id="alertBanner">⚠️ Emotional distress detected. Caregiver has been notified. Playing reassurance message...</div>
+</div>
+
+<div class="toast-box" id="toasts"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let stream=null;
+
+function toast(m,ok){let t=document.createElement('div');t.className='toast '+(ok?'toast-ok':'toast-err');t.textContent=m;document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),3000)}
+
+document.getElementById('startCam').addEventListener('click',async()=>{
+    try{
+        stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}}});
+        document.getElementById('camVideo').srcObject=stream;
+        document.getElementById('camOverlay').classList.add('hidden');
+        document.getElementById('captureBtn').disabled=false;
+        document.getElementById('stopCam').style.display='inline-flex';
+    }catch(e){toast('Camera access denied',false)}
+});
+
+document.getElementById('stopCam').addEventListener('click',()=>{
+    if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+    document.getElementById('camOverlay').classList.remove('hidden');
+    document.getElementById('captureBtn').disabled=true;
+    document.getElementById('stopCam').style.display='none';
+});
+
+document.getElementById('captureBtn').addEventListener('click',()=>{
+    let v=document.getElementById('camVideo'),c=document.getElementById('snapCanvas');
+    c.width=v.videoWidth;c.height=v.videoHeight;
+    c.getContext('2d').drawImage(v,0,0);
+    c.toBlob(b=>sendForRecognition(b),'image/jpeg',.9);
+});
+
+document.getElementById('uploadPhoto').addEventListener('change',e=>{
+    if(e.target.files[0])sendForRecognition(e.target.files[0]);
+});
+
+async function sendForRecognition(blob){
+    let btn=document.getElementById('captureBtn');
+    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyzing...';
+    document.getElementById('scanLine').style.display='block';
+    document.getElementById('resultArea').innerHTML='';
+
+    let fd=new FormData();
+    fd.append('file',new File([blob],'capture.jpg',{type:'image/jpeg'}));
+
+    try{
+        let res=await fetch('/recognize',{method:'POST',body:fd});
+        let data=await res.json();
+        document.getElementById('scanLine').style.display='none';
+
+        if(data.status==='success'){
+            document.getElementById('resultArea').innerHTML=`
+                <div class="card result-card" style="margin-top:1rem">
+                    <div class="match-info">
+                        <div class="match-avatar">👤</div>
+                        <div>
+                            <div class="match-name">${data.name}</div>
+                            <div class="match-conf">Confidence: ${data.confidence}%</div>
+                            <div class="conf-bar"><div class="conf-fill" style="width:${data.confidence}%"></div></div>
+                        </div>
+                    </div>
+                    ${data.audio_url?`<audio controls autoplay src="${data.audio_url}" style="width:100%;margin-top:.5rem"></audio>`:''}
+                </div>`;
+            speakReassurance(`This is ${data.name}. You know them well. Everything is okay.`);
+        }else{
+            document.getElementById('resultArea').innerHTML=`<div class="card result-card" style="margin-top:1rem;text-align:center;padding:2rem"><span style="font-size:2rem">🤷</span><p style="margin-top:.5rem;color:var(--grey)">${data.message}</p></div>`;
+        }
+    }catch(err){toast('Network error',false);document.getElementById('scanLine').style.display='none'}
+
+    btn.disabled=!stream;btn.innerHTML='🔍 Capture & Identify';
+}
+
+function speakReassurance(text){
+    if('speechSynthesis' in window){
+        let u=new SpeechSynthesisUtterance(text);
+        u.rate=0.85;u.pitch=1.0;u.volume=0.9;
+        speechSynthesis.speak(u);
+    }
+}
+</script>
+{% endblock %}
