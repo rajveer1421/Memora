@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memora — AI Memory Care Platform</title>
+    <meta name="description" content="Memora helps Alzheimer's patients reconnect with loved ones through real-time face recognition, emotional support, and intelligent care tools.">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --deep-sage: #4a7c59;
+            --soft-sage: #8baf8d;
+            --charcoal: #2c2c2c;
+            --mid-grey: #6b7280;
+            --border: #e5e7eb;
+            --card-bg: #ffffff;
+            --bg: #f8f9fa;
+            --radius: 14px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--charcoal);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--deep-sage);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #3d6b4b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--deep-sage);
+            border: 1.5px solid var(--deep-sage);
+        }
+
+        .btn-outline:hover {
+            background: rgba(74, 124, 89, 0.06);
+            transform: translateY(-1px);
+        }
+
+        .btn-lg {
+            padding: 12px 26px;
+            font-size: 0.92rem;
+        }
+
+        /* Grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-brand {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.4rem;
+            color: var(--deep-sage);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.25rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--mid-grey);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--deep-sage);
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <div class="container">
+        <nav class="nav-bar">
+            <a href="/" class="nav-brand">🧠 Memora</a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/register">Register</a></li>
+                <li><a href="/recognize">Recognize</a></li>
+                <li><a href="/reminders">Reminders</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+            </ul>
+        </nav>
+
+        {% block content %}
+        <!-- Default homepage content -->
+        <style>
+            .hero {
+                text-align: center;
+                padding: 2.5rem 0.5rem 2rem;
+            }
+
+            .hero-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: rgba(74, 124, 89, 0.1);
+                color: var(--deep-sage);
+                padding: 5px 14px;
+                border-radius: 20px;
+                font-size: 0.78rem;
+                font-weight: 600;
+                margin-bottom: 1rem;
+                letter-spacing: 0.3px;
+            }
+
+            .hero h1 {
+                font-family: 'DM Serif Display', serif;
+                font-size: clamp(1.8rem, 6vw, 3rem);
+                line-height: 1.15;
+                letter-spacing: -0.5px;
+                color: var(--charcoal);
+                margin-bottom: 0.875rem;
+            }
+
+            .hero h1 em {
+                font-style: italic;
+                color: var(--deep-sage);
+            }
+
+            .hero p {
+                color: var(--mid-grey);
+                font-size: 0.95rem;
+                max-width: 480px;
+                margin: 0 auto 1.75rem;
+                line-height: 1.6;
+            }
+
+            .hero-actions {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            /* Status bar */
+            .status-bar {
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1rem 1.25rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 2rem;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+                box-shadow: var(--shadow);
+            }
+
+            .status-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .status-dot {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                background: var(--soft-sage);
+                box-shadow: 0 0 0 3px rgba(139, 175, 141, 0.25);
+                animation: pulse 2s infinite;
+                flex-shrink: 0;
+            }
+
+            @keyframes pulse {
+
+                0%,
+                100% {
+                    box-shadow: 0 0 0 3px rgba(139, 175, 141, 0.25);
+                }
+
+                50% {
+                    box-shadow: 0 0 0 6px rgba(139, 175, 141, 0.08);
+                }
+            }
+
+            .status-item span {
+                font-size: 0.82rem;
+                color: var(--mid-grey);
+            }
+
+            .status-item strong {
+                color: var(--charcoal);
+            }
+
+            /* Feature cards */
+            .features-section h2 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1.4rem;
+                text-align: center;
+                margin-bottom: 1.25rem;
+                color: var(--charcoal);
+            }
+
+            .feature-card {
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1.25rem;
+                box-shadow: var(--shadow);
+                transition: all 0.22s;
+                text-decoration: none;
+                display: block;
+                color: inherit;
+            }
+
+            .feature-card:hover {
+                box-shadow: var(--shadow-hover);
+                transform: translateY(-2px);
+                border-color: var(--soft-sage);
+            }
+
+            .feature-card:active {
+                transform: translateY(0);
+            }
+
+            .feature-icon {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.35rem;
+                margin-bottom: 0.875rem;
+            }
+
+            .fi-sage {
+                background: rgba(74, 124, 89, 0.12);
+            }
+
+            .fi-rose {
+                background: rgba(201, 137, 122, 0.12);
+            }
+
+            .fi-gold {
+                background: rgba(212, 168, 83, 0.12);
+            }
+
+            .fi-teal {
+                background: rgba(80, 160, 150, 0.12);
+            }
+
+            .fi-purple {
+                background: rgba(150, 100, 200, 0.12);
+            }
+
+            .feature-card h3 {
+                font-family: 'DM Serif Display', serif;
+                font-size: 1rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .feature-card p {
+                font-size: 0.82rem;
+                color: var(--mid-grey);
+                line-height: 1.5;
+            }
+
+            .card-arrow {
+                margin-top: 0.75rem;
+                font-size: 0.78rem;
+                color: var(--deep-sage);
+                font-weight: 600;
+            }
+        </style>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>System <strong>Active</strong></span>
+            </div>
+            <div class="status-item">
+                <span>👤 Profiles: <strong id="profile-count">—</strong></span>
+            </div>
+            <div class="status-item">
+                <span>🔔 Today: <strong id="reminder-count">—</strong></span>
+            </div>
+            <div class="status-item">
+                <span>📍 <strong style="color:var(--deep-sage)">Safe Zone On</strong></span>
+            </div>
+        </div>
+
+        <div class="hero">
+            <div class="hero-label">🧠 AI Memory Care Platform</div>
+            <h1>Every face is a<br><em>memory worth keeping.</em></h1>
+            <p>Memora helps Alzheimer's patients reconnect with loved ones through real-time face recognition, emotional
+                support, and intelligent care tools.</p>
+            <div class="hero-actions">
+                <a href="/recognize" class="btn btn-primary btn-lg">🔍 Start Recognition</a>
+                <a href="/register" class="btn btn-outline btn-lg">👤 Register Person</a>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <h2>Everything in one place</h2>
+            <div class="grid-3">
+                <a href="/register" class="feature-card">
+                    <div class="feature-icon fi-sage">👤</div>
+                    <h3>Face Registration</h3>
+                    <p>Add family members with photos and personal voice messages.</p>
+                    <div class="card-arrow">Register →</div>
+                </a>
+                <a href="/recognize" class="feature-card">
+                    <div class="feature-icon fi-rose">🔍</div>
+                    <h3>Live Recognition</h3>
+                    <p>Identify visitors instantly and trigger comforting voice responses.</p>
+                    <div class="card-arrow">Start →</div>
+                </a>
+                <a href="/reminders" class="feature-card">
+                    <div class="feature-icon fi-gold">🔔</div>
+                    <h3>Smart Reminders</h3>
+                    <p>Medication, meals, and appointment reminders with voice alerts.</p>
+                    <div class="card-arrow">Set reminders →</div>
+                </a>
+                <a href="/sos" class="feature-card">
+                    <div class="feature-icon fi-rose">🆘</div>
+                    <h3>SOS & Geofence</h3>
+                    <p>Auto-alerts when the patient wanders beyond safe boundaries.</p>
+                    <div class="card-arrow">Configure →</div>
+                </a>
+                <a href="/mood" class="feature-card">
+                    <div class="feature-icon fi-purple">💬</div>
+                    <h3>Mood Tracking</h3>
+                    <p>BERT-powered emotional state analysis from speech over time.</p>
+                    <div class="card-arrow">View log →</div>
+                </a>
+                <a href="/dashboard" class="feature-card">
+                    <div class="feature-icon fi-teal">📊</div>
+                    <h3>Dashboard</h3>
+                    <p>Recognition events, reminders, and mood trends at a glance.</p>
+                    <div class="card-arrow">Open →</div>
+                </a>
+            </div>
+        </div>
+
+        <script>
+            fetch('/api/stats').then(r => r.json()).then(d => {
+                document.getElementById('profile-count').textContent = d.profiles ?? '0';
+                document.getElementById('reminder-count').textContent = d.reminders_today ?? '0';
+            }).catch(() => {
+                document.getElementById('profile-count').textContent = '0';
+                document.getElementById('reminder-count').textContent = '0';
+            });
+        </script>
+        {% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
