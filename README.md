@@ -199,7 +199,3 @@ The app will start at `http://localhost:8000`
 - [ ] PWA support for offline access
 
 ---
-
-## 📄 License
-
-MIT License — Built with 🤍 for Alzheimer's care.
