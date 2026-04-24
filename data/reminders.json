@@ -1,0 +1,47 @@
+[
+    {
+        "id": "r1",
+        "type": "medication",
+        "title": "Morning Medicine",
+        "time": "08:00",
+        "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "notes": "Donepezil 10mg with breakfast",
+        "created": "2026-04-20T08:00:00"
+    },
+    {
+        "id": "r2",
+        "type": "medication",
+        "title": "Evening Medicine",
+        "time": "20:00",
+        "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "notes": "Memantine 5mg after dinner",
+        "created": "2026-04-20T08:00:00"
+    },
+    {
+        "id": "r3",
+        "type": "meal",
+        "title": "Lunch Time",
+        "time": "12:30",
+        "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "notes": "Balanced meal with hydration",
+        "created": "2026-04-20T08:00:00"
+    },
+    {
+        "id": "r4",
+        "type": "appointment",
+        "title": "Doctor Visit",
+        "time": "10:00",
+        "days": ["Wed"],
+        "notes": "Neurologist - Dr. Sharma at City Hospital",
+        "created": "2026-04-20T08:00:00"
+    },
+    {
+        "id": "r5",
+        "type": "medication",
+        "title": "Vitamin D Supplement",
+        "time": "09:00",
+        "days": ["Mon", "Wed", "Fri"],
+        "notes": "1 tablet with water",
+        "created": "2026-04-20T08:00:00"
+    }
+]
