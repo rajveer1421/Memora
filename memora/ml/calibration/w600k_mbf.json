@@ -1,0 +1,66 @@
+{
+  "embedder": "w600k_mbf",
+  "fitted_on": "LFW DevTrain (identities disjoint from DevTest)",
+  "n_positive_pairs": 2209,
+  "n_negative_pairs": 200000,
+  "n_identities": 2132,
+  "accept_threshold": 0.2282,
+  "reject_threshold": 0.1659,
+  "verification_threshold": 0.217,
+  "platt_a": 33.38820718140666,
+  "platt_b": -7.366570714623181,
+  "far_curve": [
+    [
+      0.1,
+      0.0905
+    ],
+    [
+      0.05,
+      0.1158
+    ],
+    [
+      0.02,
+      0.1455
+    ],
+    [
+      0.01,
+      0.1659
+    ],
+    [
+      0.005,
+      0.1845
+    ],
+    [
+      0.002,
+      0.2088
+    ],
+    [
+      0.001,
+      0.2282
+    ],
+    [
+      0.0005,
+      0.2427
+    ],
+    [
+      0.0002,
+      0.2613
+    ],
+    [
+      0.0001,
+      0.2732
+    ],
+    [
+      5e-05,
+      0.2928
+    ],
+    [
+      2e-05,
+      0.3324
+    ],
+    [
+      1e-05,
+      0.3354
+    ]
+  ]
+}

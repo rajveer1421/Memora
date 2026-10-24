@@ -1,0 +1,9 @@
+# Tests, training and evaluation (on top of requirements.txt)
+-r requirements.txt
+pytest==9.1.1
+scikit-learn==1.7.2  # evaluation/training only (1.9.1's binaries are blocked by Windows Smart App Control)
+datasets==5.1.0
+mlflow==3.17.2
+# Running the Hugging Face entry point (app_hf.py) locally; the Space preinstalls these, so they are not in requirements.txt
+gradio==6.30.0
+spaces==0.51.3

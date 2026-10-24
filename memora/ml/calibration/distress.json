@@ -1,0 +1,6 @@
+{
+  "SamLowe/roberta-base-go_emotions": {
+    "distress_threshold": 0.20999999999999996,
+    "fitted_on": "GoEmotions validation (max distress-F1)"
+  }
+}

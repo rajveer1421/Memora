@@ -1,0 +1,21 @@
+{
+  "pipeline": "original app.py @ 5ed489d (DeepFace 0.0.93 ArcFace ResNet-34, cosine < 0.68)",
+  "data": "LFW pairsDevTest, 1,000 pairs",
+  "pairs_evaluated": 1000,
+  "accuracy_at_0.68": 0.871,
+  "accuracy_95ci": [
+    0.85,
+    0.892
+  ],
+  "TAR_at_0.68": 0.758,
+  "FAR_at_0.68": 0.016,
+  "roc_auc": 0.8885,
+  "unique_images": 1549,
+  "detector_strategy_used": {
+    "opencv/enforce=True": 1510,
+    "opencv/enforce=False": 39
+  },
+  "whole_frame_embeddings_face_confidence_0": 39,
+  "median_latency_s": 0.395,
+  "p95_latency_s": 0.708
+}

@@ -1,141 +1,152 @@
 {% extends "base.html" %}
-{% block title %}Recognize — Memora{% endblock %}
+{% block title %}Who is this? · Memora{% endblock %}
 {% block head %}
 <style>
-    .recognize-wrap{max-width:560px}
-    .video-container{position:relative;border-radius:var(--radius);overflow:hidden;background:#1a1a2e;aspect-ratio:4/3;margin-bottom:1rem}
-    .video-container video{width:100%;height:100%;object-fit:cover}
-    .video-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);color:#fff;font-size:.9rem;flex-direction:column;gap:.5rem}
-    .video-overlay.hidden{display:none}
-    .scan-line{position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--sage),transparent);animation:scanDown 2s linear infinite;display:none}
-    @keyframes scanDown{0%{top:0}100%{top:100%}}
-    .cam-controls{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
-    .result-card{animation:fadeUp .4s ease}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    .match-info{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
-    .match-avatar{width:64px;height:64px;border-radius:50%;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0}
-    .match-name{font-family:'DM Serif Display',serif;font-size:1.3rem}
-    .match-conf{font-size:.82rem;color:var(--grey)}
-    .conf-bar{height:6px;border-radius:3px;background:var(--border);margin-top:4px;overflow:hidden}
-    .conf-fill{height:100%;border-radius:3px;background:var(--sage);transition:width .6s ease}
-    .alert-banner{padding:1rem;border-radius:var(--radius);background:var(--danger-bg);border:1px solid var(--danger);color:var(--danger);display:none;margin-top:1rem;font-size:.85rem;animation:fadeUp .4s ease}
-    .upload-alt{margin-top:1rem;text-align:center}
-    .upload-alt input[type=file]{display:none}
+    .rec{max-width:560px;margin:0 auto}
+    .cam{position:relative;border-radius:20px;overflow:hidden;background:#0f172a;aspect-ratio:4/3;box-shadow:var(--shadow-md)}
+    .cam video{width:100%;height:100%;object-fit:cover}
+    .cam-over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;color:#fff;background:rgba(15,23,42,.55);text-align:center;padding:1rem}
+    .cam-over.hidden{display:none}
+    .scan{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#4ade80,transparent);animation:scan 2.2s linear infinite;display:none}
+    .scanning .scan{display:block}
+    @keyframes scan{0%{top:0}100%{top:100%}}
+    .status{display:flex;align-items:center;justify-content:center;gap:.5rem;color:var(--muted);font-size:.92rem;margin:.9rem 0;min-height:1.5rem;text-align:center}
+    .controls{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+    .result{text-align:center;padding:1.75rem 1.25rem;animation:up .3s ease}
+    @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .result h2{font-size:1.05rem;margin:.6rem 0 1rem;color:var(--ink)}
+    .result .name{font-size:1.6rem;font-weight:800;color:var(--ink);margin-top:.75rem}
+    .result .rel{color:var(--muted);font-size:1rem}
+    .voice{display:flex;align-items:center;gap:.75rem;text-align:left;background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:.9rem 1rem;margin-top:1.1rem}
+    .voice .tile{background:#2563eb;color:#fff;width:36px;height:36px;border-radius:10px}
+    .voice strong{color:var(--ink);font-size:.92rem}
+    .voice small{display:block;color:var(--muted);font-size:.78rem}
+    .voice audio{width:100%;height:34px;margin-top:.4rem}
+    .conf{font-size:.8rem;color:var(--muted);margin-top:.75rem}
+    .result-actions{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1.25rem}
+    .upload input{display:none}
 </style>
 {% endblock %}
-
 {% block content %}
-<div class="page-head">
-    <h1>🔍 Live Recognition</h1>
-    <p>Identify a person using your camera or upload a photo.</p>
+<div class="rec">
+    <div class="page-head" style="justify-content:center;text-align:center"><div><h1>Who is this?</h1><p>{% if role == 'patient' %}Point the phone at the person. I'll tell you who they are.{% else %}Test recognition the way {{ patient.name }} uses it.{% endif %}</p></div></div>
+
+    <div class="cam" id="cam">
+        <video id="vid" autoplay playsinline muted></video>
+        <div class="scan"></div>
+        <div class="cam-over" id="over"><span class="tile tile-lg t-green">{{ icon('camera') }}</span><span id="overText">Starting the camera…</span><button class="btn btn-primary" id="startBtn" style="display:none">{{ icon('camera') }} Start camera</button></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="controls" id="controls">
+        <button class="btn btn-outline btn-sm" id="checkBtn" disabled>{{ icon('scan-face') }} Check now</button>
+        <button class="btn btn-ghost btn-sm" id="flipBtn">{{ icon('refresh-cw') }} Switch camera</button>
+        {% if role == 'caregiver' %}<label class="btn btn-ghost btn-sm upload" for="upload">{{ icon('upload') }} Upload a photo<input type="file" id="upload" accept="image/jpeg,image/png,image/webp"></label>{% endif %}
+    </div>
+    <div id="result" style="margin-top:1rem"></div>
+    <canvas id="cv" style="display:none"></canvas>
 </div>
-
-<div class="recognize-wrap">
-    <div class="video-container" id="vidBox">
-        <video id="camVideo" autoplay playsinline></video>
-        <div class="scan-line" id="scanLine"></div>
-        <div class="video-overlay" id="camOverlay">
-            <span style="font-size:2rem">📷</span>
-            <span>Camera not started</span>
-        </div>
-    </div>
-
-    <div class="cam-controls">
-        <button class="btn btn-primary" id="startCam">📷 Start Camera</button>
-        <button class="btn btn-outline" id="captureBtn" disabled>🔍 Capture & Identify</button>
-        <button class="btn btn-outline btn-sm" id="stopCam" style="display:none">⏹ Stop</button>
-    </div>
-
-    <div class="upload-alt">
-        <label class="btn btn-outline btn-sm" for="uploadPhoto" style="cursor:pointer">📁 Or upload a photo</label>
-        <input type="file" id="uploadPhoto" accept="image/*">
-    </div>
-
-    <canvas id="snapCanvas" style="display:none"></canvas>
-
-    <div id="resultArea"></div>
-    <div class="alert-banner" id="alertBanner">⚠️ Emotional distress detected. Caregiver has been notified. Playing reassurance message...</div>
-</div>
-
-<div class="toast-box" id="toasts"></div>
 {% endblock %}
-
 {% block scripts %}
 <script>
-let stream=null;
+const ROLE={{ role|tojson }};
+const AUTO_MS=2500;
+let stream=null,timer=null,busy=false,paused=false,facing=ROLE==='patient'?'environment':'user';
+let announced={},streak={key:null,n:0},lastNote=0;
+const status=(html)=>{document.getElementById('status').innerHTML=html};
 
-function toast(m,ok){let t=document.createElement('div');t.className='toast '+(ok?'toast-ok':'toast-err');t.textContent=m;document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),3000)}
-
-document.getElementById('startCam').addEventListener('click',async()=>{
+async function startCamera(){
     try{
-        stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}}});
-        document.getElementById('camVideo').srcObject=stream;
-        document.getElementById('camOverlay').classList.add('hidden');
-        document.getElementById('captureBtn').disabled=false;
-        document.getElementById('stopCam').style.display='inline-flex';
-    }catch(e){toast('Camera access denied',false)}
-});
-
-document.getElementById('stopCam').addEventListener('click',()=>{
-    if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
-    document.getElementById('camOverlay').classList.remove('hidden');
-    document.getElementById('captureBtn').disabled=true;
-    document.getElementById('stopCam').style.display='none';
-});
-
-document.getElementById('captureBtn').addEventListener('click',()=>{
-    let v=document.getElementById('camVideo'),c=document.getElementById('snapCanvas');
-    c.width=v.videoWidth;c.height=v.videoHeight;
-    c.getContext('2d').drawImage(v,0,0);
-    c.toBlob(b=>sendForRecognition(b),'image/jpeg',.9);
-});
-
-document.getElementById('uploadPhoto').addEventListener('change',e=>{
-    if(e.target.files[0])sendForRecognition(e.target.files[0]);
-});
-
-async function sendForRecognition(blob){
-    let btn=document.getElementById('captureBtn');
-    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyzing...';
-    document.getElementById('scanLine').style.display='block';
-    document.getElementById('resultArea').innerHTML='';
-
-    let fd=new FormData();
-    fd.append('file',new File([blob],'capture.jpg',{type:'image/jpeg'}));
-
-    try{
-        let res=await fetch('/recognize',{method:'POST',body:fd});
-        let data=await res.json();
-        document.getElementById('scanLine').style.display='none';
-
-        if(data.status==='success'){
-            document.getElementById('resultArea').innerHTML=`
-                <div class="card result-card" style="margin-top:1rem">
-                    <div class="match-info">
-                        <div class="match-avatar">👤</div>
-                        <div>
-                            <div class="match-name">${data.name}</div>
-                            <div class="match-conf">Confidence: ${data.confidence}%</div>
-                            <div class="conf-bar"><div class="conf-fill" style="width:${data.confidence}%"></div></div>
-                        </div>
-                    </div>
-                    ${data.audio_url?`<audio controls autoplay src="${data.audio_url}" style="width:100%;margin-top:.5rem"></audio>`:''}
-                </div>`;
-            speakReassurance(`This is ${data.name}. You know them well. Everything is okay.`);
-        }else{
-            document.getElementById('resultArea').innerHTML=`<div class="card result-card" style="margin-top:1rem;text-align:center;padding:2rem"><span style="font-size:2rem">🤷</span><p style="margin-top:.5rem;color:var(--grey)">${data.message}</p></div>`;
-        }
-    }catch(err){toast('Network error',false);document.getElementById('scanLine').style.display='none'}
-
-    btn.disabled=!stream;btn.innerHTML='🔍 Capture & Identify';
-}
-
-function speakReassurance(text){
-    if('speechSynthesis' in window){
-        let u=new SpeechSynthesisUtterance(text);
-        u.rate=0.85;u.pitch=1.0;u.volume=0.9;
-        speechSynthesis.speak(u);
+        if(stream)stream.getTracks().forEach(t=>t.stop());
+        stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:960},height:{ideal:720}}});
+        document.getElementById('vid').srcObject=stream;
+        document.getElementById('over').classList.add('hidden');
+        document.getElementById('checkBtn').disabled=false;
+        resume();
+    }catch(e){
+        document.getElementById('overText').textContent='Allow the camera to see who is here.';
+        document.getElementById('startBtn').style.display='inline-flex';
     }
 }
+function resume(){
+    paused=false;document.getElementById('result').innerHTML='';
+    document.getElementById('cam').classList.add('scanning');
+    status(ic('scan-face')+' Looking for a face…');
+    clearInterval(timer);timer=setInterval(()=>capture(true),AUTO_MS);
+}
+function pause(){paused=true;clearInterval(timer);document.getElementById('cam').classList.remove('scanning')}
+
+async function capture(auto){
+    if(busy||!stream||(auto&&paused))return;
+    const v=document.getElementById('vid'),c=document.getElementById('cv');
+    if(!v.videoWidth)return;
+    const scale=Math.min(1,960/v.videoWidth);
+    c.width=v.videoWidth*scale;c.height=v.videoHeight*scale;c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.88));
+    send(blob,auto);
+}
+async function send(blob,auto){
+    busy=true;
+    const fd=new FormData();fd.append('photo',new File([blob],'frame.jpg',{type:'image/jpeg'}));
+    if(auto)fd.append('auto','1');
+    const d=await api('/api/recognize',{method:'POST',body:fd});
+    busy=false;
+    handle(d,auto);
+}
+
+function handle(d,auto){
+    const now=Date.now();
+    if(d.decision==='match'){
+        // a person is announced once; the same person again only after two minutes
+        if(auto&&announced[d.person_id]&&now-announced[d.person_id]<120000){status(ic('circle-check')+' '+esc(d.name)+' is here.');return}
+        announced[d.person_id]=now;
+        return showMatch(d);
+    }
+    if(d.decision==='none'||d.decision==='rejected'){streak={key:null,n:0};status(ic('scan-face')+' '+(auto?'Looking for a face…':esc(d.message||'No face found. Try again.')));return}
+    if(d.decision==='retake'){status(ic('lightbulb')+' '+esc(d.message||'It is a bit dark or blurry. Face the light.'));return}
+    // unknown / unsure: say something only if it keeps happening, and not more than once a minute
+    const key=d.decision+(d.person_id||'');
+    streak=streak.key===key?{key,n:streak.n+1}:{key,n:1};
+    if(auto&&streak.n<3){status(ic('scan-face')+' Taking a closer look…');return}
+    if(now-lastNote<60000&&auto){return}
+    lastNote=now;
+    if(d.decision==='unsure'){
+        note('circle-alert','t-amber',`This might be ${esc(d.name)}, but I'm not sure.`,'You can ask them their name.');
+        speak(`I'm not sure. It might be ${d.name}. You can ask them their name.`);
+    }else if(d.decision==='unknown'){
+        note('user-round','t-blue',"I don't know this person.",'They are not one of the people your family added. It is fine to ask their name.');
+        speak("I don't know this person. It's fine to ask them their name.");
+    }else{
+        status(esc(d.message||'Something went wrong.'));
+    }
+}
+function note(iconName,tone,title,body){
+    document.getElementById('result').innerHTML=`<div class="card result"><span class="tile tile-lg ${tone}" style="margin:0 auto">${ic(iconName)}</span><div class="name" style="font-size:1.2rem">${title}</div><p class="rel">${body}</p>
+        ${ROLE==='patient'?'<div class="result-actions"><button class="btn btn-outline" onclick="resume()">Look again</button><a class="btn btn-primary" href="/patient">Go back home</a></div>':''}</div>`;
+}
+function showMatch(d){
+    pause();
+    const rel=d.relationship?`Your ${esc(d.relationship)}`:'Someone you know well';
+    const conf=ROLE==='caregiver'?`<div class="conf">Match probability ${Math.round(d.probability*100)}%${d.provider!=='local'?' · confirmed by '+esc(d.provider):''} · this number is only shown to family</div>`:'';
+    document.getElementById('result').innerHTML=`<div class="card result">
+        <span class="tile tile-lg t-green" style="margin:0 auto">${ic('circle-check')}</span>
+        <h2>Person recognised</h2>
+        ${avatar(d.name,84)}
+        <div class="name">${esc(d.name)}</div><div class="rel">${rel}</div>
+        ${d.audio_url?`<div class="voice"><span class="tile">${ic('volume-2')}</span><div style="flex:1"><strong>Voice memory</strong><small>A message from ${esc(d.name)}</small><audio id="voiceMsg" controls preload="auto" src="${esc(d.audio_url)}"></audio></div></div>`:''}
+        ${conf}
+        <div class="result-actions"><button class="btn btn-outline" onclick="resume()">Recognise again</button><a class="btn btn-primary" href="${ROLE==='patient'?'/patient':'/dashboard'}">Go back home</a></div>
+    </div>`;
+    status('');
+    // First say who it is, then their own voice message starts by itself (the play button is only a fallback).
+    speakThenPlay(`This is ${d.name}${d.relationship?', your '+d.relationship:''}. You know them well. Everything is okay.`,document.getElementById('voiceMsg'));
+}
+
+document.getElementById('startBtn').addEventListener('click',startCamera);
+document.getElementById('checkBtn').addEventListener('click',()=>{if(paused)resume();capture(false)});
+document.getElementById('flipBtn').addEventListener('click',()=>{facing=facing==='user'?'environment':'user';startCamera()});
+const up=document.getElementById('upload');
+if(up)up.addEventListener('change',e=>{if(e.target.files[0]){pause();send(e.target.files[0],false)}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();else if(stream&&!document.getElementById('result').innerHTML)resume()});
+startCamera();
 </script>
 {% endblock %}

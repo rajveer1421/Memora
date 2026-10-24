@@ -1,79 +1,134 @@
 {% extends "base.html" %}
-{% block title %}SOS & Geofence — Memora{% endblock %}
+{% block title %}Safety · Memora{% endblock %}
 {% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <style>
-    .coming-soon{text-align:center;padding:3rem 1rem}
-    .cs-icon{font-size:4rem;margin-bottom:1.5rem;animation:float 3s ease-in-out infinite}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-    .cs-title{font-family:'DM Serif Display',serif;font-size:1.8rem;margin-bottom:.5rem;color:var(--charcoal)}
-    .cs-sub{color:var(--grey);font-size:.92rem;max-width:440px;margin:0 auto 2.5rem;line-height:1.6}
-    .roadmap{max-width:480px;margin:0 auto}
-    .roadmap-item{display:flex;gap:1rem;padding-bottom:1.5rem;position:relative}
-    .roadmap-item:not(:last-child)::before{content:'';position:absolute;left:19px;top:40px;bottom:0;width:2px;background:var(--border)}
-    .rm-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;z-index:1}
-    .rm-dot.done{background:var(--sage-light);border:2px solid var(--sage)}
-    .rm-dot.progress{background:var(--gold-bg);border:2px solid var(--gold);animation:pulse 2s infinite}
-    .rm-dot.pending{background:var(--bg);border:2px solid var(--border)}
-    .rm-body h3{font-size:.92rem;font-weight:600;margin-bottom:2px}
-    .rm-body p{font-size:.8rem;color:var(--grey);line-height:1.5}
-    .rm-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;margin-left:6px}
-    .rm-badge.done{background:var(--sage-light);color:var(--sage)}
-    .rm-badge.wip{background:var(--gold-bg);color:var(--gold)}
-    .rm-badge.soon{background:var(--bg);color:var(--grey-light)}
-    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,.3)}50%{box-shadow:0 0 0 8px rgba(212,168,83,0)}}
-    .sos-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-top:2rem;max-width:700px;margin-left:auto;margin-right:auto}
-    .sos-card{text-align:center;padding:1.5rem 1rem;border-radius:var(--radius);border:1px dashed var(--border);background:var(--card)}
-    .sos-card .icon{font-size:1.8rem;margin-bottom:.5rem}
-    .sos-card h4{font-size:.88rem;margin-bottom:.25rem}
-    .sos-card p{font-size:.78rem;color:var(--grey)}
+    .safety{display:grid;gap:1rem;max-width:900px}
+    .map{height:360px;border-radius:14px;border:1px solid var(--line);z-index:0}
+    .alert{display:flex;gap:.75rem;align-items:flex-start;padding:.75rem 0;border-bottom:1px solid var(--line);font-size:.86rem}
+    .alert:last-child{border-bottom:none}
+    .alert.resolved{opacity:.5}
+    .chip{display:inline-flex;align-items:center;gap:.35rem;background:var(--green-50);color:var(--green-dark);border:1px solid var(--green-100);padding:.25rem .65rem;border-radius:20px;font-size:.8rem;font-weight:600;margin:.25rem .25rem 0 0}
+    .chip button{background:none;border:none;color:var(--red);cursor:pointer;display:grid;place-items:center}
+    .limits{font-size:.8rem;color:#78350f;background:var(--amber-50);border:1px solid #fde68a;padding:.75rem .9rem;border-radius:10px;margin-top:.9rem}
+    .row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end}
+    .row .form-group{flex:1;min-width:200px;margin:0}
 </style>
 {% endblock %}
-
 {% block content %}
-<div class="coming-soon">
-    <div class="cs-icon">🛡️</div>
-    <h1 class="cs-title">SOS & Geofencing</h1>
-    <p class="cs-sub">Advanced safety features for patient protection are under active development. Here's our roadmap:</p>
-
-    <div class="roadmap">
-        <div class="roadmap-item">
-            <div class="rm-dot done">✓</div>
-            <div class="rm-body"><h3>Face Recognition System <span class="rm-badge done">Complete</span></h3><p>DeepFace + ArcFace with multi-strategy detection pipeline.</p></div>
+<div class="page-head"><div><h1>Safety</h1><p>{{ patient.name }}'s home, safe zones and SOS alerts.</p></div>
+    <button class="btn btn-ghost btn-sm" onclick="enablePush()">{{ icon('bell') }} Push alerts to this device</button></div>
+<div class="safety">
+    <div class="card" id="home">
+        <div class="card-title">{{ icon('house') }} Home location</div>
+        <p class="muted" style="font-size:.86rem;margin-bottom:.75rem">Tap the map where home is. "Guide me home" walks {{ patient.name.split()[0] }} back here, and "Where am I?" uses the words below.</p>
+        <div id="homeMap" class="map" style="height:300px"></div>
+        <div class="row" style="margin-top:.75rem">
+            <div class="form-group"><label for="homeLabel">Address or name</label><input id="homeLabel" maxlength="120" placeholder="e.g. 12 Civil Lines, Nagpur"></div>
+            <div class="form-group"><label for="homeDesc">"Where am I?" answer</label><input id="homeDesc" maxlength="300" placeholder="e.g. at home in Nagpur, with your daughter Priya"></div>
         </div>
-        <div class="roadmap-item">
-            <div class="rm-dot done">✓</div>
-            <div class="rm-body"><h3>Mood Tracking <span class="rm-badge done">Complete</span></h3><p>NLP-based emotion detection with caregiver alerts.</p></div>
-        </div>
-        <div class="roadmap-item">
-            <div class="rm-dot progress">🔧</div>
-            <div class="rm-body"><h3>Panic Button <span class="rm-badge wip">In Progress</span></h3><p>One-touch SOS alert with instant caregiver notification via SMS.</p></div>
-        </div>
-        <div class="roadmap-item">
-            <div class="rm-dot pending">📍</div>
-            <div class="rm-body"><h3>Geofence Zones <span class="rm-badge soon">Planned</span></h3><p>Define safe boundaries on a map. Auto-alert when patient exits zone.</p></div>
-        </div>
-        <div class="roadmap-item">
-            <div class="rm-dot pending">📱</div>
-            <div class="rm-body"><h3>Auto SMS Alerts <span class="rm-badge soon">Planned</span></h3><p>Automatic Twilio SMS to emergency contacts with GPS coordinates.</p></div>
+        <div class="row" style="margin-top:.75rem">
+            <button class="btn btn-ghost btn-sm" id="useLast">{{ icon('map-pin') }} Use their last location</button>
+            <button class="btn btn-primary" id="saveHome" style="margin-left:auto">Save home</button>
         </div>
     </div>
 
-    <div class="sos-preview">
-        <div class="sos-card">
-            <div class="icon">🆘</div>
-            <h4>Panic Button</h4>
-            <p>Large, accessible button for emergencies</p>
-        </div>
-        <div class="sos-card">
-            <div class="icon">🗺️</div>
-            <h4>Safe Zone Map</h4>
-            <p>Draw boundaries around home and known areas</p>
-        </div>
-        <div class="sos-card">
-            <div class="icon">📲</div>
-            <h4>Instant Alerts</h4>
-            <p>SMS with live location to caregivers</p>
-        </div>
+    <div class="card">
+        <div class="card-title">{{ icon('shield-check') }} Safe zones</div>
+        <p class="muted" style="font-size:.86rem" id="providerInfo">Draw the area where {{ patient.name.split()[0] }} is safe (home, garden, the street outside) with the shape tool on the map. Leaving it alerts every linked relative.</p>
+        <div id="map" class="map" style="margin-top:.75rem"></div>
+        <div id="zones" style="margin-top:.5rem"></div>
+        <div id="lastLoc" class="muted" style="font-size:.82rem;margin-top:.5rem"></div>
+        <div class="limits">Location comes from {{ patient.name.split()[0] }}'s phone <strong>while Memora is open on it</strong> (about every {{ location_interval_min }} min). A website can't track location in the background; that needs the native app. Positions within the GPS accuracy of the boundary count as uncertain, not as an alarm.</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">{{ icon('triangle-alert') }} SOS and safe-zone alerts</div>
+        <div id="alerts"><div class="empty-hint">Loading…</div></div>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+const PID={{ patient.id }};
+let map,drawn,zoneLayers={},homeMap,homeMarker=null,home=null,last=null;
+
+// ---------------------------------------------------------------- home
+function placeHome(lat,lon){
+    home={lat,lon};
+    if(homeMarker)homeMarker.setLatLng([lat,lon]);else homeMarker=L.marker([lat,lon],{draggable:true}).addTo(homeMap).on('dragend',e=>{const p=e.target.getLatLng();home={lat:p.lat,lon:p.lng}});
+}
+function initHome(p){
+    homeMap=L.map('homeMap').setView([21.1458,79.0882],12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(homeMap);
+    homeMap.on('click',e=>placeHome(e.latlng.lat,e.latlng.lng));
+    if(p&&p.home_lat!=null){placeHome(p.home_lat,p.home_lon);homeMap.setView([p.home_lat,p.home_lon],17)}
+    document.getElementById('homeLabel').value=p?.home_label||'';
+    document.getElementById('homeDesc').value=p?.home_description||'';
+}
+document.getElementById('useLast').addEventListener('click',()=>{
+    if(!last){toast("No location from their phone yet.",false);return}
+    placeHome(last.lat,last.lon);homeMap.setView([last.lat,last.lon],18);
+});
+document.getElementById('saveHome').addEventListener('click',async()=>{
+    if(!home){toast('Tap the map where home is first.',false);return}
+    const r=await api(`/api/patients/${PID}`,{method:'PATCH',json:{home,home_label:document.getElementById('homeLabel').value,home_description:document.getElementById('homeDesc').value}});
+    toast(r.status==='success'?'Home saved':r.message,r.status==='success');
+});
+
+// ---------------------------------------------------------------- alerts
+async function loadAlerts(){
+    const rows=await api('/api/flags');
+    const box=document.getElementById('alerts');
+    const rel=Array.isArray(rows)?rows.filter(f=>['sos','left_safe_zone'].includes(f.kind)):[];
+    if(!rel.length){box.innerHTML='<div class="empty-hint">No SOS or safe-zone alerts.</div>';return}
+    box.innerHTML=rel.map(f=>`<div class="alert ${f.resolved_at?'resolved':''}"><span class="tile t-red" style="width:34px;height:34px">${ic(f.kind==='sos'?'triangle-alert':'map-pin')}</span>
+        <div style="flex:1"><strong>${esc(f.title)}</strong><div>${esc(f.message)}</div>
+        <small class="muted">${fmtTime(f.created_at)}${f.detail&&f.detail.map?` · <a href="${esc(f.detail.map)}" target="_blank" rel="noopener">open map</a>`:''}${f.resolved_at?' · resolved':''}</small></div>
+        ${f.resolved_at?'':`<button class="btn btn-sm btn-outline" onclick="resolveFlag(${f.id})">Resolve</button>`}</div>`).join('');
+}
+async function resolveFlag(id){await api(`/api/flags/${id}/resolve`,{method:'POST'});loadAlerts()}
+
+// ---------------------------------------------------------------- safe zones
+async function loadZones(){
+    const zones=await api('/api/zones');
+    Object.values(zoneLayers).forEach(l=>drawn.removeLayer(l));zoneLayers={};
+    if(!Array.isArray(zones))return;
+    zones.forEach(z=>{const l=L.geoJSON(z.polygon,{style:{color:'#00a63e',weight:2,fillOpacity:.12}});l.eachLayer(x=>drawn.addLayer(x));zoneLayers[z.id]=l.getLayers()[0]});
+    document.getElementById('zones').innerHTML=zones.map(z=>`<span class="chip">${ic('shield-check')} ${esc(z.name)}${z.aws_synced?' · AWS':''} <button title="Delete zone" onclick="delZone(${z.id})">${ic('x')}</button></span>`).join('');
+    if(zones.length)map.fitBounds(drawn.getBounds(),{maxZoom:18});
+}
+async function delZone(id){if(!confirm('Delete this safe zone?'))return;await api('/api/zones/'+id,{method:'DELETE'});loadZones()}
+async function loadLocation(){
+    const d=await api('/api/location/latest');
+    const info=document.getElementById('providerInfo');
+    if(d.provider==='aws')info.textContent+=` Checked by Amazon Location Service (${d.aws_calls_this_month}/${d.aws_cap} calls this month), with a local fallback.`;
+    const l=d.latest;last=l;
+    if(!l){document.getElementById('lastLoc').textContent="No location received yet. Open Memora on the patient's phone and allow location.";return}
+    const status={1:'inside the safe zone',0:'OUTSIDE the safe zone'}[l.inside]??'near the boundary (uncertain)';
+    document.getElementById('lastLoc').textContent=`Last location ${timeAgo(l.created_at)}: ${status}${l.accuracy_m?` (±${Math.round(l.accuracy_m)} m)`:''}, checked by ${l.provider}.`;
+    L.circleMarker([l.lat,l.lon],{radius:8,color:'#fff',weight:3,fillColor:l.inside===0?'#e7000b':'#00a63e',fillOpacity:1}).addTo(map).bindPopup('Last known location');
+    if(!Object.keys(zoneLayers).length)map.setView([l.lat,l.lon],17);
+}
+function initMap(){
+    map=L.map('map').setView([21.1458,79.0882],12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+    drawn=new L.FeatureGroup().addTo(map);
+    map.addControl(new L.Control.Draw({draw:{polygon:{allowIntersection:false,showArea:true},polyline:false,rectangle:true,circle:false,marker:false,circlemarker:false},edit:false}));
+    map.on(L.Draw.Event.CREATED,async e=>{
+        const name=prompt('Name this safe zone','Home');if(name===null)return;
+        const r=await api('/api/zones',{method:'POST',json:{name,polygon:e.layer.toGeoJSON().geometry}});
+        toast(r.status==='success'?('Safe zone saved. '+(r.note||'')):r.message,r.status==='success');loadZones();
+    });
+}
+(async()=>{
+    const ps=await api('/api/patients');
+    initHome((ps.patients||[]).find(p=>p.id===PID));
+    initMap();await loadZones();await loadLocation();loadAlerts();setInterval(loadAlerts,30000);
+    if(location.hash==='#home')document.getElementById('home').scrollIntoView();
+})();
+</script>
 {% endblock %}

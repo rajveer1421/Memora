@@ -1,9 +1,21 @@
-flask==3.0.3
-gunicorn==22.0.0
-deepface==0.0.93
-tensorflow==2.13.0
-tf-keras==2.14.1
-numpy==1.24.3
-scipy==1.13.1
-opencv-python-headless==4.9.0.80
-Pillow==10.3.0
+# Memora runtime (Python 3.12). Versions are the ones tested; see requirements-dev.txt for training/eval.
+# torch is left unpinned on purpose: Hugging Face ZeroGPU preinstalls a supported version.
+# Locally, CPU-only:  pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+flask==3.1.3
+python-dotenv==1.2.4
+numpy==2.5.4
+pillow==12.3.0
+opencv-python-headless==5.0.0.93
+scipy==1.18.1  # OWLv2 image preprocessing (resize) requires it
+onnxruntime==1.31.0
+shapely==2.2.0
+rapidfuzz==3.14.6
+torch
+transformers==5.20.2
+faster-whisper==1.2.1
+av==16.1.0  # faster-whisper 1.2.1 passes metadata_errors=, which PyAV >= 19 removed
+boto3==1.43.117
+cryptography==50.0.2  # AES-GCM encryption of stored files (memora/storage.py)
+pywebpush==2.5.0
+py-vapid==1.9.6
+a2wsgi==1.10.10

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Sweet memories · Memora{% endblock %}
+{% block head %}
+<style>
+    .mems{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+    .mem{padding:0;overflow:hidden;display:flex;flex-direction:column}
+    .mem img{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--bg)}
+    .mem .ph{aspect-ratio:4/3;display:grid;place-items:center;background:linear-gradient(135deg,#fce7f3,#f3e8ff);color:#db2777}
+    .mem .ph .i{width:40px;height:40px}
+    .mem .body{padding:.9rem 1rem 1rem;display:flex;flex-direction:column;gap:.3rem;flex:1}
+    .mem h3{font-size:1rem}
+    .mem p{font-size:.86rem;color:var(--text)}
+    .mem audio{width:100%;height:34px;margin-top:.3rem}
+    .rec{display:flex;align-items:center;gap:.75rem}
+    .rec-btn{width:48px;height:48px;border-radius:50%;padding:0}
+    .rec-btn.on{background:var(--red);animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,0,11,.35)}50%{box-shadow:0 0 0 10px rgba(231,0,11,0)}}
+    .prev{width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:.5rem;display:none}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>Sweet memories</h1><p>Photos and recorded messages {{ patient.name.split()[0] }} can play any time. Memora also offers one when it notices they're upset or confused.</p></div>
+    <button class="btn btn-primary" id="addBtn">{{ icon('plus') }} Add memory</button>
+</div>
+<div id="list"><div class="empty-hint">Loading…</div></div>
+
+<div class="sheet" id="sheet"><div class="card">
+    <div class="sheet-head"><h2>Add a sweet memory</h2><button class="x-btn" data-close>{{ icon('x') }}</button></div>
+    <div class="form-group"><label for="title">Title</label><input id="title" maxlength="80" placeholder="e.g. Our trip to Goa, 1998"></div>
+    <div class="form-group"><label for="caption">A few words (read aloud first)</label><textarea id="caption" rows="2" maxlength="300" placeholder="e.g. You and Papa on the beach. You loved the coconut water."></textarea></div>
+    <div class="form-group"><label>Photo</label>
+        <label class="btn btn-ghost btn-sm" for="photo" style="display:inline-flex;margin:0;cursor:pointer">{{ icon('image') }} Choose a photo</label>
+        <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" style="display:none">
+        <img class="prev" id="photoPrev" alt="">
+    </div>
+    <div class="form-group"><label>Your voice</label>
+        <div class="rec"><button type="button" class="btn btn-outline rec-btn" id="recBtn">{{ icon('mic') }}</button><span class="hint" id="recStatus" style="margin:0">Tell the story in your own voice</span></div>
+        <audio id="voicePrev" controls style="display:none;width:100%;margin-top:.5rem"></audio>
+    </div>
+    <p class="hint" style="margin-bottom:1rem">{{ icon('lock') }} Photos and recordings are stored encrypted and only {{ patient.name.split()[0] }} and their family can open them.</p>
+    <button class="btn btn-primary btn-lg btn-block" id="saveBtn">Save memory</button>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+let photo=null,voice=null,recorder=new VoiceRecorder();
+const sheet=document.getElementById('sheet');
+document.getElementById('addBtn').addEventListener('click',()=>sheet.classList.add('show'));
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>sheet.classList.remove('show')));
+document.getElementById('photo').addEventListener('change',e=>{
+    photo=e.target.files[0]||null;const p=document.getElementById('photoPrev');
+    if(photo){p.src=URL.createObjectURL(photo);p.style.display='block'}else p.style.display='none';
+});
+document.getElementById('recBtn').addEventListener('click',async()=>{
+    const btn=document.getElementById('recBtn'),st=document.getElementById('recStatus');
+    if(recorder.recording){
+        voice=await recorder.stop();btn.classList.remove('on');btn.innerHTML=ic('mic');st.textContent='Saved. Tap to record again.';
+        const a=document.getElementById('voicePrev');a.src=URL.createObjectURL(voice);a.style.display='block';return;
+    }
+    try{await recorder.start();btn.classList.add('on');btn.innerHTML=ic('square');st.textContent='Recording… tap to stop'}catch(e){toast('Please allow the microphone.',false)}
+});
+document.getElementById('saveBtn').addEventListener('click',async()=>{
+    const fd=new FormData();
+    fd.append('title',document.getElementById('title').value.trim());
+    fd.append('caption',document.getElementById('caption').value.trim());
+    if(photo)fd.append('photo',photo);
+    if(voice)fd.append('voice',voice);
+    const btn=document.getElementById('saveBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Saving…';
+    const r=await api('/api/memories',{method:'POST',body:fd});
+    btn.disabled=false;btn.textContent='Save memory';
+    if(r.status!=='success'){toast(r.message,false);return}
+    toast('Memory saved',true);sheet.classList.remove('show');
+    ['title','caption','photo'].forEach(id=>document.getElementById(id).value='');photo=null;voice=null;
+    document.getElementById('photoPrev').style.display='none';document.getElementById('voicePrev').style.display='none';
+    load();
+});
+async function load(){
+    const rows=await api('/api/memories');const box=document.getElementById('list');
+    if(!Array.isArray(rows)||!rows.length){
+        box.innerHTML=`<div class="card empty"><span class="tile t-pink">${ic('heart')}</span><h3>No memories yet</h3><p>A favourite photo with a few words in your own voice can calm a hard moment.</p><button class="btn btn-primary" onclick="document.getElementById('addBtn').click()">${ic('plus')} Add the first memory</button></div>`;return;
+    }
+    box.innerHTML='<div class="mems">'+rows.map(m=>`<div class="card mem">${m.photo_url?`<img src="${esc(m.photo_url)}" alt="">`:`<div class="ph">${ic('heart')}</div>`}
+        <div class="body"><h3>${esc(m.title)}</h3>${m.caption?`<p>${esc(m.caption)}</p>`:''}
+        ${m.voice_url?`<audio controls preload="none" src="${esc(m.voice_url)}"></audio>`:''}
+        <small class="muted">Added by ${esc(m.added_by||'family')} · ${timeAgo(m.created_at)}</small>
+        <div style="margin-top:auto;padding-top:.5rem"><button class="btn btn-sm btn-danger-outline" onclick="del(${m.id})">${ic('trash-2')} Remove</button></div></div></div>`).join('')+'</div>';
+}
+async function del(id){if(!confirm('Remove this memory?'))return;await api('/api/memories/'+id,{method:'DELETE'});load()}
+load();
+</script>
+{% endblock %}

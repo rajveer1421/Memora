@@ -1,0 +1,417 @@
+{
+  "n_test": 86,
+  "n_train": 189,
+  "data_note": "Train and test questions were written by the project author (not collected from patients); the test file was written separately with different phrasing.",
+  "models": {
+    "keyword_rules": {
+      "accuracy": 0.3605,
+      "accuracy_95ci": [
+        0.2674,
+        0.4651
+      ],
+      "macro_f1": 0.3754,
+      "macro_f1_95ci": [
+        0.2576,
+        0.4599
+      ],
+      "need_help_recall": 0.3333,
+      "false_need_help": 0,
+      "accuracy_by_style": {
+        "fragment": {
+          "n": 5,
+          "accuracy": 0.8
+        },
+        "hinglish": {
+          "n": 9,
+          "accuracy": 0.0
+        },
+        "indian-english": {
+          "n": 2,
+          "accuracy": 0.0
+        },
+        "indirect": {
+          "n": 1,
+          "accuracy": 0.0
+        },
+        "natural": {
+          "n": 62,
+          "accuracy": 0.371
+        },
+        "rambling": {
+          "n": 3,
+          "accuracy": 0.333
+        },
+        "typo": {
+          "n": 4,
+          "accuracy": 0.75
+        }
+      }
+    },
+    "tfidf_logreg": {
+      "accuracy": 0.6628,
+      "accuracy_95ci": [
+        0.5581,
+        0.7674
+      ],
+      "macro_f1": 0.6693,
+      "macro_f1_95ci": [
+        0.5593,
+        0.7599
+      ],
+      "need_help_recall": 0.5556,
+      "false_need_help": 3,
+      "accuracy_by_style": {
+        "fragment": {
+          "n": 5,
+          "accuracy": 0.6
+        },
+        "hinglish": {
+          "n": 9,
+          "accuracy": 0.111
+        },
+        "indian-english": {
+          "n": 2,
+          "accuracy": 1.0
+        },
+        "indirect": {
+          "n": 1,
+          "accuracy": 0.0
+        },
+        "natural": {
+          "n": 62,
+          "accuracy": 0.71
+        },
+        "rambling": {
+          "n": 3,
+          "accuracy": 1.0
+        },
+        "typo": {
+          "n": 4,
+          "accuracy": 1.0
+        }
+      }
+    },
+    "minilm_logreg (ours)": {
+      "accuracy": 0.8256,
+      "accuracy_95ci": [
+        0.7442,
+        0.907
+      ],
+      "macro_f1": 0.8401,
+      "macro_f1_95ci": [
+        0.7507,
+        0.9068
+      ],
+      "need_help_recall": 0.7778,
+      "false_need_help": 1,
+      "accuracy_by_style": {
+        "fragment": {
+          "n": 5,
+          "accuracy": 0.8
+        },
+        "hinglish": {
+          "n": 9,
+          "accuracy": 0.111
+        },
+        "indian-english": {
+          "n": 2,
+          "accuracy": 1.0
+        },
+        "indirect": {
+          "n": 1,
+          "accuracy": 1.0
+        },
+        "natural": {
+          "n": 62,
+          "accuracy": 0.919
+        },
+        "rambling": {
+          "n": 3,
+          "accuracy": 1.0
+        },
+        "typo": {
+          "n": 4,
+          "accuracy": 0.75
+        }
+      }
+    },
+    "minilm_logreg without OOS threshold (ablation)": {
+      "accuracy": 0.8372,
+      "accuracy_95ci": [
+        0.7558,
+        0.907
+      ],
+      "macro_f1": 0.8498,
+      "macro_f1_95ci": [
+        0.7654,
+        0.9153
+      ],
+      "need_help_recall": 0.7778,
+      "false_need_help": 1,
+      "accuracy_by_style": {
+        "fragment": {
+          "n": 5,
+          "accuracy": 1.0
+        },
+        "hinglish": {
+          "n": 9,
+          "accuracy": 0.111
+        },
+        "indian-english": {
+          "n": 2,
+          "accuracy": 1.0
+        },
+        "indirect": {
+          "n": 1,
+          "accuracy": 1.0
+        },
+        "natural": {
+          "n": 62,
+          "accuracy": 0.919
+        },
+        "rambling": {
+          "n": 3,
+          "accuracy": 1.0
+        },
+        "typo": {
+          "n": 4,
+          "accuracy": 0.75
+        }
+      }
+    }
+  },
+  "ours_meta": {
+    "encoder": "sentence-transformers/all-MiniLM-L6-v2",
+    "C": 20,
+    "oos_threshold": 0.26,
+    "cv_macro_f1": 0.874488622364253,
+    "n_train": 189,
+    "per_intent": {
+      "feeling": 18,
+      "medicine": 20,
+      "need_help": 17,
+      "orientation_place": 16,
+      "orientation_time": 16,
+      "out_of_scope": 18,
+      "today_schedule": 20,
+      "where_is_object": 24,
+      "who_is_person": 20,
+      "who_visited": 20
+    },
+    "data": "author-written example questions (training/data/intents_train.jsonl)",
+    "git_commit": "5ed489d"
+  },
+  "confusion_matrix_ours": {
+    "labels": [
+      "where_is_object",
+      "medicine",
+      "today_schedule",
+      "who_visited",
+      "who_is_person",
+      "orientation_time",
+      "orientation_place",
+      "need_help",
+      "feeling",
+      "out_of_scope"
+    ],
+    "matrix": [
+      [
+        8,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        8,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        7,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        6,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        7,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        7,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        7,
+        1
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        6
+      ]
+    ]
+  },
+  "errors_ours": [
+    {
+      "text": "i cant find the specs anywhere",
+      "true": "where_is_object",
+      "pred": "out_of_scope"
+    },
+    {
+      "text": "meri chabi kahan hai",
+      "true": "where_is_object",
+      "pred": "who_is_person"
+    },
+    {
+      "text": "dawai le li kya maine",
+      "true": "medicine",
+      "pred": "out_of_scope"
+    },
+    {
+      "text": "whats next",
+      "true": "today_schedule",
+      "pred": "out_of_scope"
+    },
+    {
+      "text": "aaj kya karna hai",
+      "true": "today_schedule",
+      "pred": "who_is_person"
+    },
+    {
+      "text": "Has Priya come to see me yet",
+      "true": "who_visited",
+      "pred": "who_is_person"
+    },
+    {
+      "text": "aaj kaun aaya tha",
+      "true": "who_visited",
+      "pred": "who_is_person"
+    },
+    {
+      "text": "kitne baje hain",
+      "true": "orientation_time",
+      "pred": "out_of_scope"
+    },
+    {
+      "text": "main kahan hoon",
+      "true": "orientation_place",
+      "pred": "who_is_person"
+    },
+    {
+      "text": "bachao",
+      "true": "need_help",
+      "pred": "who_is_person"
+    },
+    {
+      "text": "There is smoke in the kitchen",
+      "true": "need_help",
+      "pred": "who_is_person"
+    },
+    {
+      "text": "mujhe accha nahi lag raha",
+      "true": "feeling",
+      "pred": "out_of_scope"
+    },
+    {
+      "text": "Will it rain tomorrow",
+      "true": "out_of_scope",
+      "pred": "today_schedule"
+    },
+    {
+      "text": "Call me a cab",
+      "true": "out_of_scope",
+      "pred": "need_help"
+    },
+    {
+      "text": "Who is the president of America",
+      "true": "out_of_scope",
+      "pred": "who_is_person"
+    }
+  ]
+}

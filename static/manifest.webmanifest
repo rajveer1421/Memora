@@ -1,0 +1,11 @@
+{
+  "name": "Memora — AI Memory Care",
+  "short_name": "Memora",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#4a7c59",
+  "icons": [
+    {"src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}

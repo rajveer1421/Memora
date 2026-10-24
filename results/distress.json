@@ -1,0 +1,347 @@
+{
+  "care_set": {
+    "n": 140,
+    "n_distress": 71,
+    "note": "author-written sentences (not patient data); small, so confidence intervals are wide"
+  },
+  "goemotions_test": {
+    "n": 5427,
+    "n_distress": 1313
+  },
+  "app_model": "SamLowe/roberta-base-go_emotions",
+  "models": {
+    "keyword engine (original)": {
+      "care": {
+        "distress_precision": 0.5366,
+        "distress_recall": 0.3099,
+        "distress_f1": 0.3929,
+        "distress_f1_95ci": [
+          0.2745,
+          0.5042
+        ],
+        "false_alarms": 19,
+        "missed": 49,
+        "emotion_accuracy": 0.3929,
+        "emotion_accuracy_95ci": [
+          0.3143,
+          0.4714
+        ],
+        "emotion_macro_f1": 0.4243,
+        "distress_by_tag": {
+          "confusion": {
+            "n": 18,
+            "distress_accuracy": 0.278
+          },
+          "indian_english": {
+            "n": 8,
+            "distress_accuracy": 0.625
+          },
+          "keyword_trap": {
+            "n": 20,
+            "distress_accuracy": 0.4
+          },
+          "negation": {
+            "n": 15,
+            "distress_accuracy": 0.2
+          },
+          "plain": {
+            "n": 79,
+            "distress_accuracy": 0.646
+          }
+        }
+      },
+      "goemotions_test": {
+        "distress_precision": 0.43,
+        "distress_recall": 0.1988,
+        "distress_f1": 0.2719,
+        "distress_f1_95ci": [
+          0.2471,
+          0.2979
+        ],
+        "false_alarms": 346,
+        "missed": 1052
+      }
+    },
+    "tfidf + logreg": {
+      "care": {
+        "distress_precision": 0.7581,
+        "distress_recall": 0.662,
+        "distress_f1": 0.7068,
+        "distress_f1_95ci": [
+          0.6129,
+          0.7862
+        ],
+        "false_alarms": 15,
+        "missed": 24,
+        "emotion_accuracy": 0.5143,
+        "emotion_accuracy_95ci": [
+          0.4357,
+          0.5929
+        ],
+        "emotion_macro_f1": 0.4971,
+        "distress_by_tag": {
+          "confusion": {
+            "n": 18,
+            "distress_accuracy": 0.444
+          },
+          "indian_english": {
+            "n": 8,
+            "distress_accuracy": 0.75
+          },
+          "keyword_trap": {
+            "n": 20,
+            "distress_accuracy": 0.8
+          },
+          "negation": {
+            "n": 15,
+            "distress_accuracy": 0.333
+          },
+          "plain": {
+            "n": 79,
+            "distress_accuracy": 0.835
+          }
+        }
+      },
+      "goemotions_test": {
+        "distress_precision": 0.5293,
+        "distress_recall": 0.6679,
+        "distress_f1": 0.5906,
+        "distress_f1_95ci": [
+          0.5699,
+          0.6103
+        ],
+        "false_alarms": 780,
+        "missed": 436
+      },
+      "threshold_from_validation": 0.16999999999999998
+    },
+    "SamLowe/roberta-base-go_emotions (pretrained, used directly: the app)": {
+      "care": {
+        "distress_precision": 0.9104,
+        "distress_recall": 0.8592,
+        "distress_f1": 0.8841,
+        "distress_f1_95ci": [
+          0.8209,
+          0.9371
+        ],
+        "false_alarms": 6,
+        "missed": 10,
+        "emotion_accuracy": 0.6357,
+        "emotion_accuracy_95ci": [
+          0.5571,
+          0.7143
+        ],
+        "emotion_macro_f1": 0.6249,
+        "distress_by_tag": {
+          "confusion": {
+            "n": 18,
+            "distress_accuracy": 0.889
+          },
+          "indian_english": {
+            "n": 8,
+            "distress_accuracy": 0.75
+          },
+          "keyword_trap": {
+            "n": 20,
+            "distress_accuracy": 0.85
+          },
+          "negation": {
+            "n": 15,
+            "distress_accuracy": 0.8
+          },
+          "plain": {
+            "n": 79,
+            "distress_accuracy": 0.924
+          }
+        }
+      },
+      "goemotions_test": {
+        "distress_precision": 0.5868,
+        "distress_recall": 0.754,
+        "distress_f1": 0.66,
+        "distress_f1_95ci": [
+          0.6393,
+          0.6787
+        ],
+        "false_alarms": 697,
+        "missed": 323,
+        "multilabel_macro_f1": 0.5634
+      },
+      "threshold_from_validation": 0.20999999999999996,
+      "parameters_millions": 124.7,
+      "cpu_ms_per_sentence": 12.5
+    },
+    "j-hartmann distilroberta (off-the-shelf, 7 classes)": {
+      "care": {
+        "distress_precision": 0.8125,
+        "distress_recall": 0.7324,
+        "distress_f1": 0.7704,
+        "distress_f1_95ci": [
+          0.6818,
+          0.8421
+        ],
+        "false_alarms": 12,
+        "missed": 19,
+        "emotion_accuracy": 0.6643,
+        "emotion_accuracy_95ci": [
+          0.5857,
+          0.7429
+        ],
+        "emotion_macro_f1": 0.6756,
+        "distress_by_tag": {
+          "confusion": {
+            "n": 18,
+            "distress_accuracy": 0.222
+          },
+          "indian_english": {
+            "n": 8,
+            "distress_accuracy": 0.875
+          },
+          "keyword_trap": {
+            "n": 20,
+            "distress_accuracy": 0.9
+          },
+          "negation": {
+            "n": 15,
+            "distress_accuracy": 0.533
+          },
+          "plain": {
+            "n": 79,
+            "distress_accuracy": 0.911
+          }
+        }
+      },
+      "goemotions_test": "not reported: GoEmotions is in this model's training data (contaminated)"
+    }
+  },
+  "errors_app_model_care": [
+    {
+      "text": "Where did I keep my reading glasses?",
+      "true": "neutral",
+      "pred": "surprise",
+      "distress_true": 0,
+      "flag": true,
+      "score": 0.4036
+    },
+    {
+      "text": "I miss nothing, everyone is here with me",
+      "true": "joy",
+      "pred": "sadness",
+      "distress_true": 0,
+      "flag": true,
+      "score": 0.8726
+    },
+    {
+      "text": "Sorry I'm late for breakfast, I was reading",
+      "true": "neutral",
+      "pred": "sadness",
+      "distress_true": 0,
+      "flag": true,
+      "score": 0.7837
+    },
+    {
+      "text": "Nobody visits me anymore",
+      "true": "sadness",
+      "pred": "neutral",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.04
+    },
+    {
+      "text": "I'm not confused, I know exactly where I am",
+      "true": "neutral",
+      "pred": "confusion",
+      "distress_true": 0,
+      "flag": true,
+      "score": 0.5193
+    },
+    {
+      "text": "There's nothing to be afraid of, it's just the thunder",
+      "true": "neutral",
+      "pred": "fear",
+      "distress_true": 0,
+      "flag": true,
+      "score": 0.4119
+    },
+    {
+      "text": "I have to go to the office, I'm late",
+      "true": "confusion",
+      "pred": "neutral",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.1435
+    },
+    {
+      "text": "Mera ghar kahan hai, I want my house",
+      "true": "confusion",
+      "pred": "joy",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.0181
+    },
+    {
+      "text": "Someone is trying to get in, I heard noises",
+      "true": "fear",
+      "pred": "neutral",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.0114
+    },
+    {
+      "text": "I think somebody stole my purse",
+      "true": "fear",
+      "pred": "neutral",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.0521
+    },
+    {
+      "text": "There are strangers outside watching the house",
+      "true": "fear",
+      "pred": "neutral",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.0075
+    },
+    {
+      "text": "Bahut darr lag raha hai, very scared",
+      "true": "fear",
+      "pred": "joy",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.1725
+    },
+    {
+      "text": "I wish my son lived closer",
+      "true": "sadness",
+      "pred": "joy",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.0161
+    },
+    {
+      "text": "You never listen to me",
+      "true": "anger",
+      "pred": "neutral",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.0509
+    },
+    {
+      "text": "This food is horrible, take it away",
+      "true": "disgust",
+      "pred": "fear",
+      "distress_true": 0,
+      "flag": true,
+      "score": 0.5001
+    },
+    {
+      "text": "I thought my husband was coming home for lunch",
+      "true": "confusion",
+      "pred": "neutral",
+      "distress_true": 1,
+      "flag": false,
+      "score": 0.1051
+    }
+  ]
+}

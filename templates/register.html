@@ -1,171 +1,175 @@
 {% extends "base.html" %}
-{% block title %}Register — Memora{% endblock %}
+{% block title %}People · Memora{% endblock %}
 {% block head %}
 <style>
-    .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);position:relative}
-    .upload-zone:hover,.upload-zone.dragover{border-color:var(--sage);background:var(--sage-light)}
-    .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-    .upload-zone .icon{font-size:2rem;margin-bottom:.5rem}
-    .upload-zone .label{font-size:.85rem;color:var(--grey)}
-    .upload-zone .label strong{color:var(--sage)}
-    .preview-img{max-width:200px;max-height:200px;border-radius:var(--radius);margin-top:1rem;display:none;object-fit:cover;border:2px solid var(--sage-light)}
-    .camera-section{margin-top:.75rem}
-    .camera-feed{width:100%;max-width:400px;border-radius:var(--radius);background:#000;display:none}
-    .voice-recorder{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
-    .rec-btn{width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;font-size:1.2rem;transition:all .2s;display:flex;align-items:center;justify-content:center}
-    .rec-btn.idle{background:var(--sage-light);color:var(--sage)}
-    .rec-btn.recording{background:var(--danger);color:#fff;animation:recPulse 1s infinite}
-    @keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,53,69,.4)}50%{box-shadow:0 0 0 10px rgba(220,53,69,0)}}
-    .rec-status{font-size:.82rem;color:var(--grey)}
-    .audio-preview{margin-top:.5rem;width:100%}
-    .step-indicator{display:flex;gap:.5rem;margin-bottom:1.5rem}
-    .step{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .3s}
-    .step.active{background:var(--sage)}
-    .step.done{background:var(--sage-soft)}
+    .people{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+    .person{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.35rem;padding:1.4rem 1rem}
+    .person h3{font-size:1.05rem;margin-top:.4rem}
+    .person .rel{color:var(--muted);font-size:.86rem}
+    .person .meta{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:center;margin:.4rem 0}
+    .person audio{width:100%;height:34px;margin-top:.3rem}
+    .person .acts{display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap;justify-content:center}
+    .drop{border:2px dashed var(--line);border-radius:14px;padding:1.4rem;text-align:center;cursor:pointer;position:relative;background:var(--bg);transition:all .15s}
+    .drop:hover,.drop.over{border-color:var(--green);background:var(--green-50)}
+    .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+    .drop .i{width:28px;height:28px;color:var(--green)}
+    .previews{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem}
+    .previews div{position:relative}
+    .previews img{width:84px;height:84px;border-radius:10px;object-fit:cover;border:2px solid var(--green-100)}
+    .previews button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--red);color:#fff;cursor:pointer;display:grid;place-items:center;padding:0}
+    .previews button .i{width:13px;height:13px}
+    .cam-feed{width:100%;border-radius:12px;background:#000;display:none;margin-top:.6rem}
+    .rec{display:flex;align-items:center;gap:.75rem}
+    .rec-btn{width:48px;height:48px;border-radius:50%;padding:0}
+    .rec-btn.on{background:var(--red);animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,0,11,.35)}50%{box-shadow:0 0 0 10px rgba(231,0,11,0)}}
+    .consent{display:flex;gap:.6rem;align-items:flex-start;font-size:.8rem;color:var(--text);background:var(--amber-50);border:1px solid #fde68a;padding:.75rem;border-radius:10px;font-weight:400}
+    .consent input{margin-top:3px}
 </style>
 {% endblock %}
-
 {% block content %}
 <div class="page-head">
-    <h1>👤 Register a Person</h1>
-    <p>Add a family member or caregiver with their photo and a personal voice message.</p>
+    <div><h1>Manage people</h1><p>The faces and voices {{ patient.name }} should recognise. Photos become face embeddings and are then deleted.</p></div>
+    <button class="btn btn-primary" id="addBtn">{{ icon('plus') }} Add person</button>
 </div>
+<div id="people"><div class="empty-hint">Loading…</div></div>
 
-<div class="step-indicator">
-    <div class="step active" id="s1"></div>
-    <div class="step" id="s2"></div>
-    <div class="step" id="s3"></div>
-</div>
-
-<form id="regForm" class="card" style="max-width:560px">
-    <div class="form-group">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" placeholder="e.g. Sarah Johnson" required>
-    </div>
-
-    <div class="form-group">
-        <label>Photo</label>
-        <div class="upload-zone" id="dropZone">
-            <input type="file" id="photoInput" accept="image/*">
-            <div class="icon">📸</div>
-            <div class="label">Drag & drop a photo or <strong>browse</strong></div>
+<div class="sheet" id="addSheet"><div class="card">
+    <div class="sheet-head"><h2 id="sheetTitle">Add a person</h2><button class="x-btn" data-close>{{ icon('x') }}</button></div>
+    <form id="regForm">
+        <div id="whoFields">
+            <div class="form-group"><label for="name">Name</label><input id="name" placeholder="e.g. Sarah Johnson" maxlength="80" required></div>
+            <div class="form-group"><label for="relationship">Relationship to {{ patient.name.split()[0] }}</label><input id="relationship" placeholder="e.g. daughter, son, nurse" maxlength="60"></div>
+            <div class="form-group">
+                <label>Photos (1 to 3, one face each)</label>
+                <div class="drop" id="drop"><input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" multiple>{{ icon('image') }}<div class="hint">Drop photos here or <strong style="color:var(--green-dark)">browse</strong>. Different angles help.</div></div>
+                <div class="previews" id="previews"></div>
+                <button type="button" class="btn btn-ghost btn-sm" id="camBtn" style="margin-top:.6rem">{{ icon('camera') }} Use camera</button>
+                <video id="camFeed" class="cam-feed" autoplay playsinline muted></video>
+                <button type="button" class="btn btn-primary btn-sm" id="snapBtn" style="display:none;margin-top:.5rem">Take photo</button>
+                <canvas id="camCanvas" style="display:none"></canvas>
+            </div>
         </div>
-        <img id="photoPreview" class="preview-img" alt="Preview">
-        <div class="camera-section">
-            <button type="button" class="btn btn-outline btn-sm" id="camBtn" style="margin-top:.5rem">📷 Use Camera</button>
-            <video id="camFeed" class="camera-feed" autoplay playsinline></video>
-            <button type="button" class="btn btn-sm btn-primary" id="captureBtn" style="display:none;margin-top:.5rem">Capture Photo</button>
-            <canvas id="camCanvas" style="display:none"></canvas>
+        <div class="form-group">
+            <label>Voice memory</label>
+            <p class="hint" style="margin:0 0 .5rem">Record a short message in their own voice, e.g. "Hi Mum, it's Sarah. I'm here with you." It plays after Memora says who they are.</p>
+            <div class="rec"><button type="button" class="btn btn-outline rec-btn" id="recBtn">{{ icon('mic') }}</button><span class="hint" id="recStatus" style="margin:0">Tap to record</span></div>
+            <audio id="audioPreview" controls style="display:none;width:100%;margin-top:.5rem"></audio>
         </div>
-    </div>
-
-    <div class="form-group">
-        <label>Voice Message</label>
-        <p style="font-size:.8rem;color:var(--grey);margin-bottom:.5rem">Record a message like "This is your daughter, Sarah"</p>
-        <div class="voice-recorder">
-            <button type="button" class="rec-btn idle" id="recBtn">🎙️</button>
-            <span class="rec-status" id="recStatus">Tap to record</span>
+        {% if face_provider != 'local' %}
+        <div class="form-group" id="consentField">
+            <label class="consent"><input type="checkbox" id="cloudConsent">
+                <span>This person agrees to their face photos being sent to <strong>Amazon Rekognition</strong> (AWS) as a second opinion when Memora is unsure. Leave unticked to keep their face data on this server only.</span></label>
         </div>
-        <audio id="audioPreview" class="audio-preview" controls style="display:none"></audio>
-    </div>
-
-    <button type="submit" class="btn btn-primary btn-lg" style="width:100%" id="submitBtn">Register Person</button>
-</form>
-
-<div class="toast-box" id="toasts"></div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn">Save person</button>
+    </form>
+</div></div>
+<canvas id="cv" style="display:none"></canvas>
 {% endblock %}
-
 {% block scripts %}
 <script>
-let photoFile=null,voiceBlob=null,mediaRecorder=null,audioChunks=[],camStream=null;
+const MAX_PHOTOS=3,PATIENT_FIRST={{ patient.name.split()[0]|tojson }};
+let photos=[],voiceFile=null,recorder=new VoiceRecorder(),camStream=null,voiceFor=null,PEOPLE={};
 
-function toast(msg,ok){
-    let t=document.createElement('div');
-    t.className='toast '+(ok?'toast-ok':'toast-err');
-    t.textContent=msg;
-    document.getElementById('toasts').appendChild(t);
-    setTimeout(()=>t.remove(),3000);
+const sheet=document.getElementById('addSheet');
+function openSheet(personId){
+    voiceFor=personId||null;
+    document.getElementById('regForm').reset();photos=[];voiceFile=null;renderPreviews();
+    document.getElementById('audioPreview').style.display='none';document.getElementById('recStatus').textContent='Tap to record';
+    document.getElementById('whoFields').style.display=voiceFor?'none':'';
+    const cf=document.getElementById('consentField');if(cf)cf.style.display=voiceFor?'none':'';
+    document.getElementById('name').required=!voiceFor;
+    document.getElementById('sheetTitle').textContent=voiceFor?`Voice memory for ${PEOPLE[voiceFor]}`:'Add a person';
+    document.getElementById('submitBtn').textContent=voiceFor?'Save voice':'Save person';
+    sheet.classList.add('show');
 }
+function closeSheet(){sheet.classList.remove('show');if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camFeed').style.display='none';document.getElementById('snapBtn').style.display='none'}}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeSheet));
+document.getElementById('addBtn').addEventListener('click',()=>openSheet());
 
-function updateSteps(){
-    document.getElementById('s1').className='step '+(document.getElementById('name').value?'done':'active');
-    document.getElementById('s2').className='step '+(photoFile?'done':(document.getElementById('name').value?'active':''));
-    document.getElementById('s3').className='step '+(voiceBlob?'done':(photoFile?'active':''));
+function renderPreviews(){
+    document.getElementById('previews').innerHTML=photos.map((f,i)=>`<div><img src="${URL.createObjectURL(f)}" alt="Photo ${i+1}"><button type="button" onclick="removePhoto(${i})" aria-label="Remove">${ic('x')}</button></div>`).join('');
 }
-
-document.getElementById('name').addEventListener('input',updateSteps);
-
-let dz=document.getElementById('dropZone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
-dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files[0])handlePhoto(e.dataTransfer.files[0])});
-
-document.getElementById('photoInput').addEventListener('change',e=>{if(e.target.files[0])handlePhoto(e.target.files[0])});
-
-function handlePhoto(file){
-    photoFile=file;
-    let r=new FileReader();
-    r.onload=e=>{let p=document.getElementById('photoPreview');p.src=e.target.result;p.style.display='block'};
-    r.readAsDataURL(file);
-    updateSteps();
+function removePhoto(i){photos.splice(i,1);renderPreviews()}
+function addPhotos(files){
+    for(const f of files){
+        if(photos.length>=MAX_PHOTOS){toast(`At most ${MAX_PHOTOS} photos`,false);break}
+        if(!/^image\/(jpeg|png|webp)$/.test(f.type)){toast('Use JPEG, PNG or WebP photos',false);continue}
+        photos.push(f);
+    }
+    renderPreviews();
 }
-
+const drop=document.getElementById('drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('over')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('over'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('over');addPhotos(e.dataTransfer.files)});
+document.getElementById('photoInput').addEventListener('change',e=>{addPhotos(e.target.files);e.target.value=''});
 document.getElementById('camBtn').addEventListener('click',async()=>{
-    let feed=document.getElementById('camFeed');
-    if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;feed.style.display='none';document.getElementById('captureBtn').style.display='none';return}
-    try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});feed.srcObject=camStream;feed.style.display='block';document.getElementById('captureBtn').style.display='inline-flex'}catch(e){toast('Camera access denied',false)}
+    const feed=document.getElementById('camFeed');
+    if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;feed.style.display='none';document.getElementById('snapBtn').style.display='none';return}
+    try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});feed.srcObject=camStream;feed.style.display='block';document.getElementById('snapBtn').style.display='inline-flex'}catch(e){toast('Please allow the camera.',false)}
 });
-
-document.getElementById('captureBtn').addEventListener('click',()=>{
-    let v=document.getElementById('camFeed'),c=document.getElementById('camCanvas');
-    c.width=v.videoWidth;c.height=v.videoHeight;
-    c.getContext('2d').drawImage(v,0,0);
-    c.toBlob(b=>{photoFile=new File([b],'camera.jpg',{type:'image/jpeg'});
-    let p=document.getElementById('photoPreview');p.src=URL.createObjectURL(b);p.style.display='block';
-    camStream.getTracks().forEach(t=>t.stop());camStream=null;
-    document.getElementById('camFeed').style.display='none';document.getElementById('captureBtn').style.display='none';
-    updateSteps()},'image/jpeg',.9);
+document.getElementById('snapBtn').addEventListener('click',()=>{
+    const v=document.getElementById('camFeed'),c=document.getElementById('camCanvas');
+    c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+    c.toBlob(b=>addPhotos([new File([b],'camera.jpg',{type:'image/jpeg'})]),'image/jpeg',.92);
 });
-
 document.getElementById('recBtn').addEventListener('click',async()=>{
-    let btn=document.getElementById('recBtn'),status=document.getElementById('recStatus');
-    if(mediaRecorder&&mediaRecorder.state==='recording'){
-        mediaRecorder.stop();btn.className='rec-btn idle';btn.textContent='🎙️';status.textContent='Recording saved';return}
-    try{
-        let stream=await navigator.mediaDevices.getUserMedia({audio:true});
-        audioChunks=[];
-        mediaRecorder=new MediaRecorder(stream);
-        mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
-        mediaRecorder.onstop=()=>{
-            voiceBlob=new Blob(audioChunks,{type:'audio/webm'});
-            let a=document.getElementById('audioPreview');a.src=URL.createObjectURL(voiceBlob);a.style.display='block';
-            stream.getTracks().forEach(t=>t.stop());updateSteps()};
-        mediaRecorder.start();btn.className='rec-btn recording';btn.textContent='⏹';status.textContent='Recording...';
-    }catch(e){toast('Microphone access denied',false)}
+    const btn=document.getElementById('recBtn'),status=document.getElementById('recStatus');
+    if(recorder.recording){
+        voiceFile=await recorder.stop();
+        btn.classList.remove('on');btn.innerHTML=ic('mic');status.textContent='Saved. Tap to record again.';
+        const a=document.getElementById('audioPreview');a.src=URL.createObjectURL(voiceFile);a.style.display='block';return;
+    }
+    try{await recorder.start();btn.classList.add('on');btn.innerHTML=ic('square');status.textContent='Recording… tap to stop'}catch(e){toast('Please allow the microphone.',false)}
 });
 
 document.getElementById('regForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    let name=document.getElementById('name').value.trim();
-    if(!name){toast('Please enter a name',false);return}
-    if(!photoFile){toast('Please add a photo',false);return}
-    if(!voiceBlob){toast('Please record a voice message',false);return}
-
-    let btn=document.getElementById('submitBtn');
-    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Processing...';
-
-    let fd=new FormData();
-    fd.append('name',name);fd.append('file',photoFile);fd.append('voice',new File([voiceBlob],name.replace(/\s+/g,'_')+'.webm',{type:'audio/webm'}));
-
-    try{
-        let res=await fetch('/register',{method:'POST',body:fd});
-        let data=await res.json();
-        if(data.status==='success'){toast(data.message,true);document.getElementById('regForm').reset();photoFile=null;voiceBlob=null;
-        document.getElementById('photoPreview').style.display='none';document.getElementById('audioPreview').style.display='none';
-        document.getElementById('recStatus').textContent='Tap to record';updateSteps()}
-        else{toast(data.message,false)}
-    }catch(err){toast('Network error',false)}
-    btn.disabled=false;btn.textContent='Register Person';
+    const btn=document.getElementById('submitBtn'),label=btn.textContent;
+    if(voiceFor){
+        if(!voiceFile){toast('Record the message first',false);return}
+        const fd=new FormData();fd.append('voice',voiceFile);
+        btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Saving…';
+        const r=await api(`/api/people/${voiceFor}`,{method:'PATCH',body:fd});
+        btn.disabled=false;btn.textContent=label;
+        if(r.status==='success'){toast('Voice memory saved',true);closeSheet();load()}else toast(r.message,false);
+        return;
+    }
+    const name=document.getElementById('name').value.trim();
+    if(!name){toast('Enter their name',false);return}
+    if(!photos.length){toast('Add at least one photo',false);return}
+    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Checking photos…';
+    const fd=new FormData();
+    fd.append('name',name);fd.append('relationship',document.getElementById('relationship').value.trim());
+    photos.forEach(p=>fd.append('photos',p));
+    if(voiceFile)fd.append('voice',voiceFile);
+    const consent=document.getElementById('cloudConsent');
+    fd.append('cloud_consent',consent&&consent.checked?'1':'0');
+    const data=await api('/api/people',{method:'POST',body:fd});
+    btn.disabled=false;btn.textContent=label;
+    if(data.status==='success'){toast(data.message+(voiceFile?'':' Add their voice memory next.'),true);closeSheet();load()}else toast(data.message,false);
 });
+
+async function load(){
+    const rows=await api('/api/people');
+    const box=document.getElementById('people');
+    PEOPLE=Object.fromEntries((Array.isArray(rows)?rows:[]).map(p=>[p.id,p.name]));
+    if(!Array.isArray(rows)||!rows.length){
+        box.innerHTML=`<div class="card empty"><span class="tile t-green">${ic('user-round')}</span><h3>No people added yet</h3><p>Start by adding the faces of people ${esc(PATIENT_FIRST)} knows.</p><button class="btn btn-primary" onclick="openSheet()">${ic('plus')} Add first person</button></div>`;
+        return;
+    }
+    box.innerHTML='<div class="people">'+rows.map(p=>`<div class="card person">${avatar(p.name,64)}<h3>${esc(p.name)}</h3><div class="rel">${p.relationship?esc(p.relationship):'&nbsp;'}</div>
+        <div class="meta"><span class="badge badge-grey">${p.photos_enrolled} photo${p.photos_enrolled===1?'':'s'}</span>${p.voice_url?'<span class="badge">Voice memory</span>':'<span class="badge badge-amber">No voice yet</span>'}${p.cloud_indexed?'<span class="badge badge-grey">Rekognition backup</span>':''}</div>
+        ${p.voice_url?`<audio controls preload="none" src="${esc(p.voice_url)}"></audio>`:''}
+        <div class="acts"><button class="btn btn-sm ${p.voice_url?'btn-ghost':'btn-outline'}" onclick="openSheet(${p.id})">${ic('mic')} ${p.voice_url?'Re-record':'Record voice'}</button>
+        <button class="btn btn-sm btn-danger-outline" onclick="delPerson(${p.id})">${ic('trash-2')}</button></div></div>`).join('')+'</div>';
+}
+async function delPerson(id){
+    if(!confirm(`Remove ${PEOPLE[id]||'this person'} and their face data?`))return;
+    const r=await api('/api/people/'+id,{method:'DELETE'});toast(r.status==='success'?'Removed':r.message,r.status==='success');load();
+}
+load();
 </script>
 {% endblock %}

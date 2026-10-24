@@ -1,0 +1,46 @@
+name: deploy
+
+# Redeploys the Hugging Face Space after the tests pass on main.
+# Needs: repository secret HF_TOKEN (write token) and repository variable HF_SPACE_ID (e.g. user/memora).
+on:
+  workflow_run:
+    workflows: [tests]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+    steps:
+      - name: Skip if the Space is not configured
+        if: ${{ env.HF_TOKEN == '' || env.HF_SPACE_ID == '' }}
+        run: echo "HF_TOKEN or HF_SPACE_ID not set; nothing to deploy." && exit 0
+
+      - uses: actions/checkout@v4
+        if: ${{ env.HF_TOKEN != '' && env.HF_SPACE_ID != '' }}
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Assemble Space files
+        if: ${{ env.HF_TOKEN != '' && env.HF_SPACE_ID != '' }}
+        run: |
+          mkdir space
+          cp -r memora templates static scripts app_hf.py requirements.txt space/
+          cp deploy/space_README.md space/README.md
+          find space -name "__pycache__" -type d -prune -exec rm -rf {} +
+
+      - name: Upload to the Space
+        if: ${{ env.HF_TOKEN != '' && env.HF_SPACE_ID != '' }}
+        run: |
+          pip install --quiet "huggingface_hub[cli]"
+          hf upload "$HF_SPACE_ID" space . --repo-type space --delete "*" \
+            --commit-message "Deploy ${GITHUB_SHA::7} from GitHub Actions"

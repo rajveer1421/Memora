@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Guide me home · Memora{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+    .guide{max-width:620px;margin:0 auto}
+    #map{height:300px;border-radius:16px;box-shadow:var(--shadow);background:#e2e8f0}
+    .big{font-size:1.5rem;font-weight:800;color:var(--ink);line-height:1.3}
+    .sub{color:var(--muted);font-size:1rem;margin-top:.3rem}
+    .go{margin-top:1rem;display:grid;gap:.6rem}
+</style>
+{% endblock %}
+{% block content %}
+<div class="guide">
+    <div class="page-head"><div><h1>Guide me home</h1><p>I'll show you where home is and how to get there.</p></div><a href="/patient" class="btn btn-ghost btn-sm">{{ icon('arrow-left') }} Back</a></div>
+    <div class="card" style="margin-bottom:1rem;text-align:center">
+        <span class="tile tile-lg t-teal" style="margin:0 auto .6rem">{{ icon('house') }}</span>
+        <div class="big" id="headline">Finding where you are…</div>
+        <div class="sub" id="subline"></div>
+    </div>
+    <div id="map"></div>
+    <div class="go">
+        <a class="btn btn-primary btn-lg btn-block" id="walkBtn" target="_blank" rel="noopener" style="display:none">{{ icon('navigation') }} Show me the way</a>
+        <a class="btn btn-danger btn-lg btn-block" href="/patient#sos" id="helpBtn">{{ icon('phone') }} I need help</a>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const DIRS=['north','north-east','east','south-east','south','south-west','west','north-west'];
+let map=L.map('map'),home=null;
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+map.setView([21.1458,79.0882],13);
+
+function distance(a,b){  // metres, haversine
+    const R=6371000,r=x=>x*Math.PI/180,dLat=r(b[0]-a[0]),dLon=r(b[1]-a[1]);
+    const h=Math.sin(dLat/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dLon/2)**2;
+    return 2*R*Math.asin(Math.sqrt(h));
+}
+function bearing(a,b){
+    const r=x=>x*Math.PI/180,y=Math.sin(r(b[1]-a[1]))*Math.cos(r(b[0])),x=Math.cos(r(a[0]))*Math.sin(r(b[0]))-Math.sin(r(a[0]))*Math.cos(r(b[0]))*Math.cos(r(b[1]-a[1]));
+    return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+function say(text){speak(text)}
+
+async function start(){
+    const me=await api('/api/patient/me');
+    home=me.home;
+    if(!home){
+        document.getElementById('headline').textContent="Your family hasn't saved your home yet.";
+        document.getElementById('subline').textContent='Ask someone nearby to help, or press "I need help" to alert your family.';
+        say("Your family hasn't saved your home address yet. Press I need help, and I'll tell them.");return;
+    }
+    const hp=[home.lat,home.lon];
+    L.marker(hp,{title:'Home'}).bindTooltip('Home',{permanent:true,direction:'top'}).addTo(map);
+    document.getElementById('walkBtn').href=`https://www.google.com/maps/dir/?api=1&destination=${home.lat},${home.lon}&travelmode=walking`;
+    document.getElementById('walkBtn').style.display='';
+    if(!navigator.geolocation){map.setView(hp,16);document.getElementById('headline').textContent='Tap "Show me the way".';return}
+    navigator.geolocation.getCurrentPosition(pos=>{
+        const me=[pos.coords.latitude,pos.coords.longitude],d=distance(me,hp);
+        L.circleMarker(me,{radius:9,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).bindTooltip('You are here').addTo(map);
+        map.fitBounds(L.latLngBounds([me,hp]).pad(.35));
+        api('/api/location',{method:'POST',json:{lat:me[0],lon:me[1],accuracy:pos.coords.accuracy}});
+        const hl=home.label;   // only ever used as textContent
+        if(d<60){
+            document.getElementById('headline').textContent="You're at home.";
+            document.getElementById('subline').textContent='You are safe.';say("You're at home. You are safe.");return;
+        }
+        const far=d<1000?`${Math.round(d/10)*10} metres`:`${(d/1000).toFixed(1)} kilometres`;
+        const dir=DIRS[Math.round(bearing(me,hp)/45)%8];
+        document.getElementById('headline').textContent=`Home is ${far} to the ${dir}.`;
+        document.getElementById('subline').textContent=(hl?hl+'. ':'')+'Tap "Show me the way" for walking directions.';
+        say(`Home is ${far} to the ${dir}. Tap show me the way, and I'll guide you.`);
+    },()=>{
+        map.setView(hp,16);
+        document.getElementById('headline').textContent='Tap "Show me the way".';
+        document.getElementById('subline').textContent="I can't see where you are because location is off.";
+    },{enableHighAccuracy:true,timeout:10000});
+}
+start();
+</script>
+{% endblock %}

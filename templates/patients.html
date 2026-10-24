@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Patients · Memora{% endblock %}
+{% block head %}
+<style>
+    .plist{display:grid;gap:.75rem;margin-bottom:1.5rem}
+    .prow{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .prow.current{border-color:var(--green-200);background:linear-gradient(90deg,var(--green-50),#fff)}
+    .prow .body{flex:1;min-width:200px}
+    .prow .name{font-weight:700;color:var(--ink)}
+    .prow .meta{font-size:.8rem;color:var(--muted)}
+    .link-card{max-width:560px}
+    .code-input{font-size:1.5rem;letter-spacing:.35em;text-align:center;font-weight:700}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Patients</h1><p>The people you look after. Each has their own account on their own phone; several relatives can link to the same person.</p></div></div>
+<div class="plist" id="list"><div class="empty-hint">Loading…</div></div>
+
+<div class="card link-card">
+    <div class="card-title">{{ icon('user-plus') }} Link a patient</div>
+    <div class="howto" style="margin-bottom:1rem"><span class="tile t-green" style="width:34px;height:34px">{{ icon('lightbulb') }}</span>
+        <div><strong>How it works</strong>Only a patient whose Memora account already exists can be linked. On their phone they open <em>My account and family</em> and tap <em>Show my code</em>. Type their username and the 6-digit code here. The code works once, for 15 minutes.</div></div>
+    <div class="form-group"><label for="lUser">Patient's username</label><input id="lUser" autocapitalize="none" maxlength="30" placeholder="e.g. kamla.devi"></div>
+    <div class="form-group"><label for="lCode">Code shown on their phone</label><input id="lCode" class="code-input" inputmode="numeric" maxlength="7" placeholder="000000"></div>
+    <button class="btn btn-primary btn-block" id="linkBtn">{{ icon('link') }} Link patient</button>
+    <p class="hint" style="text-align:center;margin-top:.75rem">They don't have an account yet? They can create one at <strong>I'm the patient</strong> on the home page.</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let NAMES={};
+async function load(){
+    const d=await api('/api/patients');
+    const ps=d.patients||[];
+    NAMES=Object.fromEntries(ps.map(p=>[p.id,p.name]));
+    const list=document.getElementById('list');
+    if(!ps.length){list.innerHTML=`<div class="card empty"><span class="tile t-green">${ic('users')}</span><h3>No patients linked yet</h3><p>Link the person you look after using the form below.</p></div>`;return}
+    list.innerHTML=ps.map(p=>`<div class="card prow ${p.id===d.current?'current':''}">${avatar(p.name,48)}
+        <div class="body"><div class="name">${esc(p.name)} ${p.id===d.current?'<span class="badge">Open now</span>':''}</div>
+            <div class="meta">@${esc(p.username)} · ${esc(p.timezone)}${p.home_label?' · home: '+esc(p.home_label):''}</div>
+            <div class="meta">${p.relatives.length?'Also looked after by '+p.relatives.map(esc).join(', '):'Only you are linked'}</div></div>
+        ${p.id!==d.current?`<button class="btn btn-sm btn-primary" onclick="selectP(${p.id})">Open</button>`:'<a class="btn btn-sm btn-outline" href="/dashboard">Dashboard</a>'}
+        <button class="btn btn-sm btn-ghost" onclick="unlink(${p.id})">Unlink</button></div>`).join('');
+}
+async function selectP(id){const r=await api(`/api/patients/${id}/select`,{method:'POST'});if(r.status==='success')location.href='/dashboard'}
+async function unlink(id){
+    if(!confirm(`Stop looking after ${NAMES[id]||'this patient'}? Their own account and data stay with them.`))return;
+    const r=await api(`/api/patients/${id}/unlink`,{method:'POST'});toast(r.status==='success'?'Unlinked':r.message,r.status==='success');load();
+}
+document.getElementById('linkBtn').addEventListener('click',async()=>{
+    const r=await api('/api/patients/link',{method:'POST',json:{username:document.getElementById('lUser').value,code:document.getElementById('lCode').value}});
+    if(r.status==='success'){const who=r.name;toast(`Linked to ${who}`,true);location.href='/dashboard'}else toast(r.message,false);
+});
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+# Secrets and private notes (never commit)
+.env
+.env.*
+!.env.example
+get_api.md
+notes/
+*.private.md
+
+# Runtime data: patient records, face embeddings, voice messages, camera frames
+instance/
+data/
+static/uploads/
+
+# Downloaded / trained model weights (fetched by scripts/download_models.py or training/)
+models/
+mlruns/
+
+# Evaluation datasets and private evaluation photos (biometric / home images)
+eval_data/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local logs
+*.log

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Memora · memory care{% endblock %}
+{% block head %}
+<style>
+    .hero{text-align:center;padding:2.5rem 1rem 2rem;background:radial-gradient(ellipse at top,var(--green-50),transparent 70%);border-radius:24px}
+    .hero-icons{display:flex;justify-content:center;gap:.6rem;margin-bottom:1.1rem}
+    .hero-icons span{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff}
+    .hero-icons .i{width:26px;height:26px}
+    .hero h1{font-size:clamp(1.9rem,5vw,2.6rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.6rem}
+    .hero p{color:var(--muted);max-width:560px;margin:0 auto;font-size:1rem}
+    .doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem;max-width:760px;margin:2rem auto 0}
+    .door{background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:1.6rem 1.4rem;text-align:left;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.75rem}
+    .door h2{font-size:1.2rem}
+    .door p{font-size:.86rem;color:var(--muted);flex:1}
+    .door .row{display:flex;gap:.5rem;flex-wrap:wrap}
+    .helps{margin-top:3rem}
+    .helps h2{text-align:center;font-size:1.4rem;margin-bottom:1.25rem}
+    .helps .action{flex-direction:column;gap:.7rem;padding:1.25rem}
+    .secure{margin-top:2.5rem;text-align:center;background:linear-gradient(180deg,var(--green-50),#fff);border:1px solid var(--green-100);border-radius:20px;padding:2rem 1.25rem}
+    .secure .tile{margin:0 auto .8rem;background:var(--green);color:#fff}
+    .secure h2{font-size:1.15rem;margin-bottom:.5rem}
+    .secure ul{list-style:none;max-width:640px;margin:0 auto;font-size:.88rem;color:var(--text);display:grid;gap:.35rem}
+</style>
+{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-icons"><span style="background:var(--green)">{{ icon('brain') }}</span><span style="background:#ec4899">{{ icon('heart') }}</span></div>
+    <h1>Welcome to Memora</h1>
+    <p>Care for people living with Alzheimer's and the family who look after them: recognising familiar faces, finding everyday things, remembering the day and staying safe.</p>
+    <div class="doors">
+        <div class="door">
+            <span class="tile t-green">{{ icon('user-round') }}</span>
+            <h2>I'm the patient</h2>
+            <p>Use Memora on your own phone or tablet. It tells you who is in front of you, helps you find your things and reminds you what's next.</p>
+            <div class="row"><a href="/patient/login" class="btn btn-outline">Patient sign in</a><a href="/patient/signup" class="btn btn-ghost">Create account</a></div>
+        </div>
+        <div class="door">
+            <span class="tile t-pink">{{ icon('heart-handshake') }}</span>
+            <h2>I'm a caregiver</h2>
+            <p>Look after someone: link their account, add familiar faces and voices, set reminders, a home and a safe zone, and get alerts.</p>
+            <div class="row"><a href="/caregiver/login" class="btn btn-primary">Caregiver sign in</a><a href="/caregiver/signup" class="btn btn-ghost">Create account</a></div>
+        </div>
+    </div>
+</section>
+
+<section class="helps">
+    <h2>How Memora helps</h2>
+    <div class="grid-3">
+        <div class="action"><span class="tile t-green">{{ icon('camera') }}</span><div><h3>Faces and familiarity</h3><p>Recognises the people the family has added and says who they are, then plays a message in their own voice.</p></div></div>
+        <div class="action"><span class="tile t-purple">{{ icon('mic') }}</span><div><h3>Voices and sweet memories</h3><p>Family photos and recorded messages the patient can play any time, offered when Memora notices they're upset.</p></div></div>
+        <div class="action"><span class="tile t-blue">{{ icon('pill') }}</span><div><h3>Medicines and reminders</h3><p>Spoken reminders for medicines, meals and plans. "When is my next medicine?" is one tap. Missed ones alert the family.</p></div></div>
+        <div class="action"><span class="tile t-orange">{{ icon('package') }}</span><div><h3>Finds everyday things</h3><p>The patient's phone notices their keys, glasses or medicine box and keeps the last photo of where each one was.</p></div></div>
+        <div class="action"><span class="tile t-teal">{{ icon('house') }}</span><div><h3>Guides you home</h3><p>Shows how far home is and opens walking directions to the home address the family saved.</p></div></div>
+        <div class="action"><span class="tile t-red">{{ icon('circle-alert') }}</span><div><h3>SOS and safe zones</h3><p>One tap sends an alert with the location to every relative. Leaving the safe zone does too.</p></div></div>
+    </div>
+</section>
+
+<section class="secure">
+    <span class="tile tile-lg">{{ icon('shield-check') }}</span>
+    <h2>Private by design</h2>
+    <ul>
+        <li>Faces are kept as numbers (embeddings), never as photos.</li>
+        <li>Camera frames without one of the patient's things are thrown away straight away.</li>
+        <li>Voice messages, memories and photos are encrypted on the server.</li>
+        <li>No cloud face service is used for anyone unless the family turns it on for that person.</li>
+        <li class="muted">Memora is a website: it uses the camera and location only while it is open on the phone.</li>
+    </ul>
+</section>
+{% endblock %}

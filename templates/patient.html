@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Memora{% endblock %}
+{% block head %}
+<style>
+    .pm{max-width:760px;margin:0 auto}
+    .greet{text-align:center;margin:.5rem 0 1.5rem}
+    .greet h1{font-size:clamp(1.6rem,5vw,2rem);font-weight:700}
+    .greet p{color:var(--muted);font-size:1rem}
+    .greet small{display:block;color:var(--faint);font-size:.85rem;margin-top:.25rem}
+    .who{display:flex;flex-direction:column;align-items:center;gap:.6rem;text-align:center;padding:1.75rem 1rem;text-decoration:none;max-width:520px;margin:0 auto 1.1rem}
+    .who:hover{border-color:var(--green-200);box-shadow:var(--shadow-md)}
+    .who h2{font-size:1.25rem}
+    .who p{color:var(--muted);font-size:.92rem}
+    .helpers{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}
+    .helper{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;text-align:center;padding:1.1rem .6rem;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);cursor:pointer;text-decoration:none;color:inherit;font-family:inherit;min-height:128px;transition:transform .15s,box-shadow .15s}
+    .helper:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+    .helper strong{font-size:.92rem;color:var(--ink);line-height:1.3}
+    .helper small{font-size:.74rem;color:var(--muted);line-height:1.35}
+    .ask-row{display:flex;gap:.5rem;margin:1.1rem auto 0;max-width:520px}
+    .ask-row input{font-size:1rem;border-radius:12px}
+    .mic{width:48px;height:48px;border-radius:50%;flex-shrink:0;padding:0}
+    .mic.listening{background:var(--red);animation:pulse 1.2s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(231,0,11,.35)}50%{box-shadow:0 0 0 12px rgba(231,0,11,0)}}
+    .sos-wrap{position:sticky;bottom:0;margin-top:1.1rem;padding:.9rem 0 .8rem;text-align:center;z-index:50;background:linear-gradient(to top,var(--bg) 78%,rgba(246,249,248,0))}
+    .sos{display:inline-flex;align-items:center;justify-content:center;gap:.6rem;width:min(100%,420px);padding:1.05rem 1rem;border:none;border-radius:14px;background:linear-gradient(90deg,var(--red-500),var(--red));color:#fff;font-size:1.15rem;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 8px 20px rgba(231,0,11,.28)}
+    .sos .i{width:24px;height:24px}
+    .sos-note{font-size:.78rem;color:var(--muted);margin-top:.4rem}
+    .banner{display:none;flex-wrap:wrap;align-items:center;gap:.75rem;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:.85rem 1rem;margin-bottom:1rem}
+    .banner.show{display:flex}
+    .answer{font-size:1.12rem;line-height:1.55;color:var(--ink)}
+    .answer img{width:100%;border-radius:12px;margin-top:.75rem}
+    .q{font-size:.85rem;color:var(--muted);margin-bottom:.4rem}
+    .voice{display:flex;align-items:center;gap:.75rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:.8rem 1rem;margin-top:.9rem}
+    .voice audio{width:100%;height:36px}
+    .mem-photo{width:100%;max-height:340px;object-fit:cover;border-radius:14px;background:var(--bg)}
+    .plan li{list-style:none;display:flex;align-items:center;gap:.75rem;padding:.7rem 0;border-bottom:1px solid var(--line)}
+    .plan li:last-child{border-bottom:none}
+    .plan .time{font-weight:700;color:var(--ink);width:3.2rem}
+    .plan .what{flex:1}
+    .faces{display:flex;justify-content:center;gap:.4rem;margin:1rem 0;flex-wrap:wrap}
+    .faces button{font-size:2.1rem;background:var(--bg);border:3px solid transparent;border-radius:16px;padding:.2rem .5rem;cursor:pointer}
+    .faces button.on{border-color:var(--green)}
+    .status-line{font-size:.78rem;color:var(--faint);text-align:center;margin-top:1rem}
+    .acct{display:block;text-align:center;margin-top:.6rem;font-size:.84rem;color:var(--muted)}
+    @media(max-width:520px){.helpers{grid-template-columns:repeat(2,1fr)}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="pm">
+    <div class="greet">
+        <h1 id="greet">Hello, {{ patient.name.split()[0] }} 💚</h1>
+        <p>How can I help you today?</p>
+        <small id="date"></small>
+    </div>
+
+    <div class="banner" id="outsideBanner">{{ icon('map-pin') }}<div style="flex:1"><strong>You're outside your safe area.</strong><br>I can show you the way home.</div><a href="/home-guide" class="btn btn-primary btn-sm">Guide me home</a></div>
+
+    <a class="card who" href="/recognize"><span class="tile tile-lg t-green">{{ icon('camera') }}</span><h2>Who is this?</h2><p>Point the phone at someone and I'll tell you who they are</p></a>
+
+    <div class="helpers">
+        <a class="helper" href="/things?kind=medicine"><span class="tile t-blue">{{ icon('pill') }}</span><strong>Find my medicines</strong><small>Where they were last kept</small></a>
+        <a class="helper" href="/things"><span class="tile t-purple">{{ icon('package') }}</span><strong>Find my things</strong><small>Keys, glasses, phone…</small></a>
+        <a class="helper" href="/home-guide"><span class="tile t-teal">{{ icon('map-pin') }}</span><strong>Guide me home</strong><small>Help me get home safely</small></a>
+        <button class="helper" id="nextMedBtn"><span class="tile t-orange">{{ icon('clock') }}</span><strong>When is my next medicine?</strong><small>Check your medicine time</small></button>
+        <button class="helper" id="memoryBtn"><span class="tile t-pink">{{ icon('heart') }}</span><strong>Play my sweet memory</strong><small>A message from family</small></button>
+        <button class="helper" id="planBtn"><span class="tile t-indigo">{{ icon('calendar-days') }}</span><strong>View my day plan</strong><small>What's happening today</small></button>
+    </div>
+
+    <div class="ask-row">
+        <input id="typed" placeholder="Ask me anything, e.g. Where are my glasses?" maxlength="300" aria-label="Ask Memora">
+        <button class="btn btn-primary mic" id="askBtn" title="Ask by voice">{{ icon('mic') }}</button>
+    </div>
+
+    <div class="sos-wrap">
+        <button class="sos" id="sosBtn">{{ icon('triangle-alert') }} SOS · Get help</button>
+        <div class="sos-note">Press if you need help now</div>
+    </div>
+    <div class="status-line" id="locStatus"></div>
+    <a class="acct" href="/patient/account">{{ icon('settings') }} My account and family</a>
+</div>
+
+<!-- answer to a question (typed, spoken or a button) -->
+<div class="sheet" id="answerSheet"><div class="card">
+    <div class="sheet-head"><h2 id="answerTitle">Memora</h2><button class="x-btn" data-close>{{ icon('x') }}</button></div>
+    <div class="q" id="question"></div><div class="answer" id="answer"></div>
+</div></div>
+
+<!-- sweet memory -->
+<div class="sheet" id="memorySheet"><div class="card" style="text-align:center">
+    <div class="sheet-head"><h2 id="memHead">A sweet memory</h2><button class="x-btn" data-close>{{ icon('x') }}</button></div>
+    <div id="memBody"></div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem"><button class="btn btn-ghost btn-block" data-close>Close</button><button class="btn btn-primary btn-block" id="memNext">Another one</button></div>
+</div></div>
+
+<!-- day plan -->
+<div class="sheet" id="planSheet"><div class="card">
+    <div class="sheet-head"><h2>Today, <span id="planDate"></span></h2><button class="x-btn" data-close>{{ icon('x') }}</button></div>
+    <ul class="plan" id="planList"></ul>
+</div></div>
+
+<!-- reminder that is due now / daily check-in -->
+<div class="sheet" id="reminderSheet"><div class="card" style="text-align:center">
+    <span class="tile tile-lg t-blue" id="rTile" style="margin:0 auto .5rem">{{ icon('bell') }}</span>
+    <h2 id="rTitle" style="font-size:1.4rem;margin:.3rem 0"></h2><p id="rNotes" style="color:var(--muted);font-size:1.05rem"></p>
+    <div id="checkinBox" style="display:none">
+        <div class="faces" id="faces"><button data-v="1">😢</button><button data-v="2">🙁</button><button data-v="3">😐</button><button data-v="4">🙂</button><button data-v="5">😄</button></div>
+        <button class="btn btn-outline" id="checkinMic">{{ icon('mic') }} Tell me how you feel</button>
+        <p id="checkinText" style="margin-top:.5rem;color:var(--muted)"></p>
+    </div>
+    <button class="btn btn-primary btn-lg btn-block" id="rDone" style="margin-top:1rem">{{ icon('check') }} Done</button>
+</div></div>
+
+<!-- SOS confirmation -->
+<div class="sheet" id="sosSheet"><div class="card" style="text-align:center">
+    <span class="tile tile-lg t-red" style="margin:0 auto .5rem">{{ icon('triangle-alert') }}</span>
+    <h2 style="font-size:1.4rem;margin:.3rem 0">Call for help?</h2><p class="muted">Your family will get an alert with where you are.</p>
+    <button class="btn btn-danger btn-lg btn-block" id="sosYes" style="margin-top:1rem">Yes, I need help</button>
+    <button class="btn btn-ghost btn-block" data-close style="margin-top:.5rem">No, I'm okay</button>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const STT_PROVIDER={{ stt_provider|tojson }};
+const FIRST_NAME={{ patient.name.split()[0]|tojson }};
+const LOC_INTERVAL={{ location_interval_s }}*1000;
+const TYPE_TILE={medication:['pill','t-blue'],meal:['smile','t-orange'],appointment:['calendar-days','t-indigo'],activity:['sparkles','t-teal'],checkin:['message-circle-heart','t-pink'],other:['bell','t-green']};
+let recorder=new VoiceRecorder(),current=null,checkinScale=null,checkinText='',lastLoc=null,memories=null,memIndex=0,warnedOutside=false;
+
+const open=id=>document.getElementById(id).classList.add('show');
+const close=id=>document.getElementById(id).classList.remove('show');
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{b.closest('.sheet').classList.remove('show');document.querySelectorAll('audio').forEach(a=>a.pause());if('speechSynthesis' in window)speechSynthesis.cancel()}));
+
+function clock(){
+    const n=new Date(),h=n.getHours();
+    document.getElementById('greet').textContent=`Good ${h<12?'morning':h<17?'afternoon':'evening'}, ${FIRST_NAME} 💚`;
+    document.getElementById('date').textContent=n.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+n.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
+clock();setInterval(clock,30000);
+
+// ---------------------------------------------------------------- answers (Ask Memora + the helper buttons)
+function showAnswer(title,q,d){
+    document.getElementById('answerTitle').textContent=title;
+    document.getElementById('question').textContent=q?'You asked: "'+q+'"':'';
+    document.getElementById('answer').innerHTML=esc(d.answer)+(d.images||[]).slice(0,1).map(u=>`<img src="${esc(u)}" alt="Where it was last seen">`).join('')
+        +(d.audio_url?`<div class="voice">${ic('volume-2')}<audio id="answerAudio" controls preload="auto" src="${esc(d.audio_url)}"></audio></div>`:'');
+    open('answerSheet');
+    // Speak the answer first, then play any voice message (never both at once).
+    speakThenPlay(d.answer,document.getElementById('answerAudio'));
+    if((d.flags||[]).some(f=>['distress','confusion','repeat_question'].includes(f)))comfortLater();
+}
+async function askText(text){
+    if(!text)return;
+    const d=await api('/api/assistant/ask',{method:'POST',json:{text}});
+    if(d.status==='success')showAnswer('Memora',d.question,d);else toast(d.message,false);
+}
+async function quick(intent,title){
+    const d=await api('/api/assistant/quick',{method:'POST',json:{intent}});
+    if(d.status==='success')showAnswer(title,'',d);else toast(d.message,false);
+}
+function browserListen(onText){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){toast('Please type your question instead.',false);return}
+    const rec=new SR();rec.lang='en-IN';rec.onresult=e=>onText(e.results[0][0].transcript);rec.onerror=()=>toast("Sorry, I didn't catch that.",false);rec.start();
+}
+document.getElementById('askBtn').addEventListener('click',async()=>{
+    const btn=document.getElementById('askBtn');
+    if(STT_PROVIDER==='browser'){browserListen(askText);return}
+    if(recorder.recording){
+        btn.classList.remove('listening');btn.innerHTML='<span class="spinner"></span>';
+        const fd=new FormData();fd.append('audio',await recorder.stop());
+        const d=await api('/api/assistant/ask',{method:'POST',body:fd});
+        btn.innerHTML=ic('mic');
+        if(d.status==='success')showAnswer('Memora',d.question,d);
+        else if(d.fallback==='browser')browserListen(askText);
+        else toast(d.message,false);
+        return;
+    }
+    try{await recorder.start();btn.classList.add('listening');btn.innerHTML=ic('square');toast('Listening… tap again when you finish',true)}catch(e){toast('Please allow the microphone.',false)}
+});
+document.getElementById('typed').addEventListener('keydown',e=>{if(e.key==='Enter'){askText(e.target.value.trim());e.target.value=''}});
+document.getElementById('nextMedBtn').addEventListener('click',()=>quick('medicine','Your medicines'));
+
+// ---------------------------------------------------------------- sweet memories
+async function playMemory(intro){
+    if(memories===null){const r=await api('/api/memories');memories=Array.isArray(r)?r:[]}
+    const body=document.getElementById('memBody');
+    document.getElementById('memHead').textContent=intro||'A sweet memory';
+    if(!memories.length){
+        body.innerHTML='<p class="muted" style="font-size:1.05rem">Your family hasn\'t added any memories yet.</p>';
+        document.getElementById('memNext').style.display='none';open('memorySheet');return;
+    }
+    const m=memories[memIndex++%memories.length];
+    document.getElementById('memNext').style.display=memories.length>1?'':'none';
+    body.innerHTML=(m.photo_url?`<img class="mem-photo" src="${esc(m.photo_url)}" alt="">`:'')
+        +`<h3 style="font-size:1.3rem;margin:.9rem 0 .25rem">${esc(m.title)}</h3>`
+        +(m.caption?`<p style="font-size:1.05rem">${esc(m.caption)}</p>`:'')
+        +(m.added_by?`<p class="muted" style="font-size:.85rem;margin-top:.3rem">From ${esc(m.added_by)}</p>`:'')
+        +(m.voice_url?`<div class="voice">${ic('volume-2')}<audio id="memAudio" controls preload="auto" src="${esc(m.voice_url)}"></audio></div>`:'');
+    open('memorySheet');
+    // The voice starts on its own after the title is read; the play button is only a fallback.
+    speakThenPlay((intro?intro+'. ':'')+m.title+(m.caption?'. '+m.caption:''),document.getElementById('memAudio'));
+}
+document.getElementById('memoryBtn').addEventListener('click',()=>playMemory());
+document.getElementById('memNext').addEventListener('click',()=>playMemory());
+// When Memora notices distress or confusion, it offers something comforting instead of waiting for a tap.
+function comfortLater(){setTimeout(()=>{if(!document.querySelector('.sheet.show'))playMemory("Here's something nice for you")},9000)}
+
+// ---------------------------------------------------------------- day plan
+document.getElementById('planBtn').addEventListener('click',async()=>{
+    const d=await api('/api/reminders/today');
+    document.getElementById('planDate').textContent=d.date||'';
+    const STATE={done:'<span class="badge">Done</span>',missed:'<span class="badge badge-red">Missed</span>',due:'<span class="badge badge-amber">Now</span>',later:'<span class="badge badge-grey">Later</span>'};
+    const items=d.items||[];
+    document.getElementById('planList').innerHTML=items.length?items.map(i=>{const t=TYPE_TILE[i.type]||TYPE_TILE.other;
+        return `<li><span class="time">${esc(i.time)}</span><span class="tile ${t[1]}" style="width:34px;height:34px">${ic(t[0])}</span><span class="what"><strong>${esc(i.title)}</strong>${i.notes?`<br><small class="muted">${esc(i.notes)}</small>`:''}</span>${STATE[i.state]||''}</li>`}).join('')
+        :'<li class="muted">Nothing planned for today. Enjoy your day.</li>';
+    open('planSheet');
+    const next=items.find(i=>i.state==='due'||i.state==='later');
+    speak(next?`Next: ${next.title} at ${next.time}.`:'Nothing else is planned for today.');
+});
+
+// ---------------------------------------------------------------- SOS
+document.getElementById('sosBtn').addEventListener('click',()=>open('sosSheet'));
+if(location.hash==='#sos')open('sosSheet');   // from "I need help" on Guide me home
+document.getElementById('sosYes').addEventListener('click',async()=>{
+    const send=async pos=>{
+        const body=pos?{lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy}:{};
+        const r=await api('/api/sos',{method:'POST',json:body});
+        close('sosSheet');
+        toast(r.message||'Alert sent',r.status==='success'&&r.alerted>0);speak(r.message||'Your family has been alerted.');
+    };
+    if(navigator.geolocation)navigator.geolocation.getCurrentPosition(send,()=>send(null),{timeout:8000,maximumAge:60000});else send(null);
+});
+
+// ---------------------------------------------------------------- reminders + check-ins
+async function pollReminders(){
+    const d=await api('/api/reminders/due');
+    if(d.status==='fail')return;
+    if(!current&&d.due.length)showReminder(d.due[0]);
+}
+function showReminder(r){
+    current=r;checkinScale=null;checkinText='';
+    const t=TYPE_TILE[r.type]||TYPE_TILE.other,tile=document.getElementById('rTile');
+    tile.className='tile tile-lg '+t[1];tile.innerHTML=ic(t[0]);
+    document.getElementById('rTitle').textContent=r.type==='checkin'?'How are you feeling today?':r.title;
+    document.getElementById('rNotes').textContent=r.type==='checkin'?'Tap a face, or tell me.':(r.notes||'');
+    document.getElementById('checkinBox').style.display=r.type==='checkin'?'block':'none';
+    document.getElementById('checkinText').textContent='';
+    document.querySelectorAll('#faces button').forEach(b=>b.classList.remove('on'));
+    open('reminderSheet');
+    speak(r.type==='checkin'?'Hello. How are you feeling today?':`It's time for ${r.title}. ${r.notes||''}`);
+    if('Notification' in window&&Notification.permission==='granted'&&document.hidden)new Notification('Memora',{body:r.title});
+}
+document.querySelectorAll('#faces button').forEach(b=>b.addEventListener('click',()=>{checkinScale=+b.dataset.v;document.querySelectorAll('#faces button').forEach(x=>x.classList.toggle('on',x===b))}));
+document.getElementById('checkinMic').addEventListener('click',async()=>{
+    const btn=document.getElementById('checkinMic');
+    const got=t=>{checkinText=t;document.getElementById('checkinText').textContent='"'+t+'"'};
+    if(STT_PROVIDER==='browser'){browserListen(got);return}
+    if(recorder.recording){
+        btn.innerHTML='<span class="spinner"></span> One moment…';
+        const fd=new FormData();fd.append('audio',await recorder.stop());
+        const r=await api('/api/stt',{method:'POST',body:fd});
+        btn.innerHTML=ic('mic')+' Tell me how you feel';
+        if(r.status==='success')got(r.text);else if(r.fallback==='browser')browserListen(got);else toast(r.message,false);
+        return;
+    }
+    try{await recorder.start();btn.innerHTML=ic('square')+' Tap when finished'}catch(e){toast('Please allow the microphone.',false)}
+});
+document.getElementById('rDone').addEventListener('click',async()=>{
+    if(!current)return;
+    let flagged=false;
+    if(current.type==='checkin'){
+        if(checkinScale===null&&!checkinText){toast('Tap a face or tell me how you feel',false);return}
+        const r=await api('/api/checkins',{method:'POST',json:{text:checkinText,scale:checkinScale}});
+        if(r.reply)speak(r.reply);
+        flagged=!!r.flagged;
+    }
+    await api(`/api/reminders/${current.id}/done`,{method:'POST',json:{due_at:current.due_at}});
+    close('reminderSheet');current=null;pollReminders();
+    if(flagged)comfortLater();
+});
+pollReminders();setInterval(pollReminders,30000);
+if('Notification' in window&&Notification.permission==='default')document.addEventListener('click',()=>Notification.requestPermission(),{once:true});
+
+// ---------------------------------------------------------------- location (only while this page is open)
+function sendLocation(pos){
+    lastLoc=Date.now();
+    api('/api/location',{method:'POST',json:{lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy}}).then(r=>{
+        document.getElementById('locStatus').textContent={inside:'Inside your safe area',outside:'Outside your safe area',uncertain:'Near the edge of your safe area',no_zones:''}[r.zone_status]??'';
+        const out=r.zone_status==='outside';
+        document.getElementById('outsideBanner').classList.toggle('show',out);
+        if(out&&!warnedOutside){warnedOutside=true;speak("You're outside your safe area. Tap Guide me home and I'll show you the way.")}
+        if(!out)warnedOutside=false;
+    });
+}
+if(navigator.geolocation){
+    navigator.geolocation.watchPosition(pos=>{if(!lastLoc||Date.now()-lastLoc>=LOC_INTERVAL)sendLocation(pos)},
+        ()=>{document.getElementById('locStatus').textContent="Location is off, so the safe area can't be checked."},{enableHighAccuracy:true,maximumAge:30000});
+}
+</script>
+{% endblock %}

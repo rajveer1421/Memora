@@ -1,0 +1,67 @@
+{
+  "setup": "DevTest pairs; the second image of each pair is degraded; threshold = accept_threshold; quality floors from results/face_gate.json (tuned on DevTrain)",
+  "floors": {
+    "brightness": 22.0,
+    "sharpness": 19.0,
+    "size_px": 40,
+    "det_score": 0.8
+  },
+  "models": {
+    "sface": {
+      "clean": {
+        "hard_rejected": 0.0,
+        "soft_flagged_dark_or_blurry": 0.001,
+        "TAR_explain_policy": 0.98,
+        "TAR_block_policy": 0.98,
+        "FAR_explain_policy": 0.002,
+        "FAR_block_policy": 0.002,
+        "genuine_failures_given_retake_prompt": 0.0
+      },
+      "dark": {
+        "hard_rejected": 0.0,
+        "soft_flagged_dark_or_blurry": 0.172,
+        "TAR_explain_policy": 0.964,
+        "TAR_block_policy": 0.816,
+        "FAR_explain_policy": 0.0,
+        "FAR_block_policy": 0.0,
+        "genuine_failures_given_retake_prompt": 0.2222
+      },
+      "blur": {
+        "hard_rejected": 0.0,
+        "soft_flagged_dark_or_blurry": 0.858,
+        "TAR_explain_policy": 0.97,
+        "TAR_block_policy": 0.132,
+        "FAR_explain_policy": 0.0,
+        "FAR_block_policy": 0.0,
+        "genuine_failures_given_retake_prompt": 0.8
+      },
+      "lowres": {
+        "hard_rejected": 0.0,
+        "soft_flagged_dark_or_blurry": 0.245,
+        "TAR_explain_policy": 0.974,
+        "TAR_block_policy": 0.75,
+        "FAR_explain_policy": 0.0,
+        "FAR_block_policy": 0.0,
+        "genuine_failures_given_retake_prompt": 0.4615
+      },
+      "jpeg": {
+        "hard_rejected": 0.0,
+        "soft_flagged_dark_or_blurry": 0.0,
+        "TAR_explain_policy": 0.97,
+        "TAR_block_policy": 0.97,
+        "FAR_explain_policy": 0.002,
+        "FAR_block_policy": 0.002,
+        "genuine_failures_given_retake_prompt": 0.0
+      }
+    }
+  },
+  "config": {
+    "embedders": [
+      "sface"
+    ],
+    "min_face_px": 40,
+    "min_det_score": 0.8,
+    "min_sharpness": 19.0,
+    "min_brightness": 22.0
+  }
+}

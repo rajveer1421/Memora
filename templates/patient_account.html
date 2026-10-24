@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}My account · Memora{% endblock %}
+{% block head %}
+<style>
+    .acct{max-width:560px;margin:0 auto;display:grid;gap:1rem}
+    .person{display:flex;align-items:center;gap:.8rem;padding:.7rem 0;border-bottom:1px solid var(--line)}
+    .person:last-child{border-bottom:none}
+    .person span.name{flex:1;font-weight:600;color:var(--ink)}
+    .code{font-size:2.5rem;letter-spacing:.3em;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+    .user{font-size:1.2rem;font-weight:700;color:var(--ink)}
+</style>
+{% endblock %}
+{% block content %}
+<div class="acct">
+    <div class="page-head" style="margin:0"><div><h1>My account</h1><p>{{ patient.name }} · @{{ patient.username }}</p></div><a href="/patient" class="btn btn-ghost btn-sm">{{ icon('arrow-left') }} Back</a></div>
+
+    <div class="card">
+        <div class="card-title">{{ icon('users') }} My family</div>
+        <div id="family"><div class="empty-hint">Loading…</div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">{{ icon('link') }} Link a family member</div>
+        <p class="muted" style="font-size:.9rem;margin-bottom:.9rem">Each person who helps look after you links with their own code. They'll be able to add faces, reminders and memories, and they'll get your alerts.</p>
+        <button class="btn btn-primary" id="codeBtn">Show my code</button>
+        <div id="codeBox" style="display:none;text-align:center;margin-top:1.1rem" class="howto">
+            <div style="width:100%">
+                <div class="muted">Username</div><div class="user" id="user"></div>
+                <div class="muted" style="margin-top:.6rem">Code</div><div class="code" id="code"></div>
+                <div class="hint">Works once, for {{ link_minutes }} minutes. They type both on their own phone.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="color:var(--red)">{{ icon('trash-2') }} Delete my account</div>
+        <p class="muted" style="font-size:.88rem;margin-bottom:.9rem">Removes your account and everything in it: faces, voice messages, memories, photos and history. This can't be undone.</p>
+        <button class="btn btn-danger-outline" id="deleteBtn">Delete my account</button>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load(){
+    const me=await api('/api/patient/me');
+    const fam=me.caregivers||[];
+    document.getElementById('family').innerHTML=fam.length?fam.map(c=>`<div class="person">${avatar(c.name,38)}<span class="name">${esc(c.name)}</span><button class="btn btn-sm btn-ghost" data-remove="${c.id}">Remove</button></div>`).join('')
+        :'<div class="empty-hint">Nobody is linked yet. When someone links, they get your alerts.</div>';
+    document.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',async()=>{
+        const password=prompt('To remove this person, type your password.');
+        if(!password)return;
+        const r=await api(`/api/patient/caregivers/${b.dataset.remove}/remove`,{method:'POST',json:{password}});
+        toast(r.status==='success'?'Removed':r.message,r.status==='success');load();
+    }));
+}
+document.getElementById('codeBtn').addEventListener('click',async()=>{
+    const r=await api('/api/patient/link-code',{method:'POST'});
+    if(r.status!=='success'){toast(r.message,false);return}
+    document.getElementById('user').textContent=r.username;
+    document.getElementById('code').textContent=r.code;
+    document.getElementById('codeBox').style.display='flex';
+    document.getElementById('codeBtn').textContent='Show a new code';
+});
+document.getElementById('deleteBtn').addEventListener('click',async()=>{
+    const password=prompt('This deletes everything and cannot be undone. Type your password to continue.');
+    if(!password)return;
+    const r=await api('/api/patient/delete-account',{method:'POST',json:{password}});
+    if(r.status==='success')location.href='/';else toast(r.message,false);
+});
+load();setInterval(load,60000);
+</script>
+{% endblock %}

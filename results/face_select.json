@@ -1,0 +1,121 @@
+{
+  "protocol": "Protocol (no tuning on test data):\n  * LFW View 1: DevTrain and DevTest have disjoint identities.\n  * Thresholds and Platt calibration are fitted on DevTrain only, using every same-identity pair and\n    200k different-identity pairs among DevTrain images (fine-grained false-accept rates).\n  * `select`     : model shoot-out on the 1,000 DevTest pairs (accuracy with bootstrap CI, AUC, TAR@FAR).\n  * `openset`    : 1:N identification like the app does it (gallery of enrolled people + strangers),\n                   using identities that never appear in DevTrain, repeated over random draws.\n  * `robustness` : DevTest pairs with the probe darkened / blurred / downscaled / JPEG-compressed,\n                   with and without the quality gate.\nWrites results/face_*.json and memora/ml/calibration/<embedder>.json.",
+  "detector": "YuNet 2023mar (OpenCV Zoo)",
+  "detector_ms_per_image": 6.3,
+  "detection_failures": {
+    "train": 0,
+    "test": 0
+  },
+  "n_test_pairs": 1000,
+  "models": {
+    "sface": {
+      "license": "Apache-2.0 (OpenCV Zoo)",
+      "file_mb": 36.9,
+      "embed_ms_median": 14.9,
+      "test_accuracy": 0.989,
+      "test_accuracy_95ci": [
+        0.982,
+        0.995
+      ],
+      "test_roc_auc": 0.9978,
+      "test_TAR_at_accept_threshold": 0.98,
+      "test_FAR_at_accept_threshold": 0.002,
+      "test_ECE_calibrated_prob": 0.0085,
+      "thresholds_from_devtrain": {
+        "verification_threshold": 0.344,
+        "accept_threshold": 0.3584,
+        "reject_threshold": 0.2934
+      }
+    },
+    "arcface_r34": {
+      "license": "DeepFace (MIT); weights from serengil/deepface_models",
+      "file_mb": 130.3,
+      "embed_ms_median": 56.6,
+      "test_accuracy": 0.971,
+      "test_accuracy_95ci": [
+        0.96,
+        0.981
+      ],
+      "test_roc_auc": 0.9959,
+      "test_TAR_at_accept_threshold": 0.888,
+      "test_FAR_at_accept_threshold": 0.0,
+      "test_ECE_calibrated_prob": 0.0145,
+      "thresholds_from_devtrain": {
+        "verification_threshold": 0.26,
+        "accept_threshold": 0.3914,
+        "reject_threshold": 0.2963
+      }
+    },
+    "w600k_mbf": {
+      "license": "InsightFace: non-commercial research only",
+      "file_mb": 13.0,
+      "embed_ms_median": 7.4,
+      "test_accuracy": 0.992,
+      "test_accuracy_95ci": [
+        0.986,
+        0.997
+      ],
+      "test_roc_auc": 0.9982,
+      "test_TAR_at_accept_threshold": 0.99,
+      "test_FAR_at_accept_threshold": 0.004,
+      "test_ECE_calibrated_prob": 0.0047,
+      "thresholds_from_devtrain": {
+        "verification_threshold": 0.217,
+        "accept_threshold": 0.2282,
+        "reject_threshold": 0.1659
+      }
+    },
+    "w600k_r50": {
+      "license": "InsightFace: non-commercial research only",
+      "file_mb": 166.3,
+      "embed_ms_median": 200.9,
+      "test_accuracy": 0.995,
+      "test_accuracy_95ci": [
+        0.99,
+        0.999
+      ],
+      "test_roc_auc": 0.998,
+      "test_TAR_at_accept_threshold": 0.994,
+      "test_FAR_at_accept_threshold": 0.004,
+      "test_ECE_calibrated_prob": 0.0028,
+      "thresholds_from_devtrain": {
+        "verification_threshold": 0.237,
+        "accept_threshold": 0.2017,
+        "reject_threshold": 0.1441
+      }
+    }
+  },
+  "original_memora_pipeline": {
+    "pipeline": "original app.py @ 5ed489d (DeepFace 0.0.93 ArcFace ResNet-34, cosine < 0.68)",
+    "data": "LFW pairsDevTest, 1,000 pairs",
+    "pairs_evaluated": 1000,
+    "accuracy_at_0.68": 0.871,
+    "accuracy_95ci": [
+      0.85,
+      0.892
+    ],
+    "TAR_at_0.68": 0.758,
+    "FAR_at_0.68": 0.016,
+    "roc_auc": 0.8885,
+    "unique_images": 1549,
+    "detector_strategy_used": {
+      "opencv/enforce=True": 1510,
+      "opencv/enforce=False": 39
+    },
+    "whole_frame_embeddings_face_confidence_0": 39,
+    "median_latency_s": 0.395,
+    "p95_latency_s": 0.708
+  },
+  "config": {
+    "embedders": [
+      "sface",
+      "arcface_r34",
+      "w600k_mbf",
+      "w600k_r50"
+    ],
+    "min_face_px": 40,
+    "min_det_score": 0.8,
+    "min_sharpness": 19.0,
+    "min_brightness": 22.0
+  }
+}

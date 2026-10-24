@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% set med = kind == 'medicine' %}
+{% block title %}{{ 'Medicines' if med else 'Things' }} · Memora{% endblock %}
+{% block head %}
+<style>
+    .ask{display:flex;gap:.5rem}
+    .ask input{flex:1;min-width:0;font-size:1.02rem}
+    .answer{font-size:1.08rem;line-height:1.55;margin-top:.9rem;color:var(--ink)}
+    .answer img{width:100%;max-width:520px;border-radius:12px;margin-top:.6rem;display:block}
+    .objs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+    .obj{padding:0;overflow:hidden;display:flex;flex-direction:column}
+    .obj .frame{width:100%;display:block;background:var(--bg);aspect-ratio:4/3;object-fit:cover}
+    .obj .none{aspect-ratio:4/3;display:grid;place-items:center;background:var(--bg);color:var(--faint);font-size:.85rem;text-align:center;padding:1rem}
+    .obj .body{padding:.9rem 1rem 1rem;display:flex;flex-direction:column;gap:.3rem;flex:1}
+    .obj h3{font-size:1rem;display:flex;align-items:center;gap:.5rem}
+    .obj .where{font-size:.9rem;color:var(--text)}
+    .obj .meta{font-size:.75rem;color:var(--faint)}
+    .refs{display:flex;gap:.3rem;margin-left:auto}
+    .refs img{width:28px;height:28px;border-radius:7px;object-fit:cover;border:1px solid var(--line)}
+    .watch{display:grid;gap:.8rem}
+    .watch video{width:100%;max-width:440px;border-radius:14px;background:#0f172a;aspect-ratio:4/3;object-fit:cover}
+    .live{display:none;align-items:center;gap:.35rem;background:var(--red);color:#fff;font-size:.72rem;font-weight:600;padding:.15rem .6rem;border-radius:20px;margin-left:.5rem}
+    .live.on{display:inline-flex;animation:blink 1.6s infinite}
+    @keyframes blink{50%{opacity:.45}}
+    .log{font-size:.78rem;color:var(--muted);max-height:150px;overflow:auto}
+    .log div{padding:.25rem 0;border-bottom:1px solid var(--line)}
+    .add-prev img{width:64px;height:64px;border-radius:10px;object-fit:cover;margin:.4rem .4rem 0 0}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div><h1>{{ 'Find my medicines' if role == 'patient' and med else 'Medicines' if med else 'Find my things' if role == 'patient' else 'Important things' }}</h1>
+    <p>{% if role == 'patient' %}Your phone keeps an eye on {{ 'your medicines' if med else 'your things' }} and remembers the last place it saw each one.{% else %}{{ 'Medicines' if med else 'Things' }} {{ patient.name }}'s phone keeps track of, and the last place each was seen.{% endif %}</p></div>
+    {% if med %}<a class="btn btn-ghost btn-sm" href="/things">{{ icon('package') }} All things</a>{% else %}<a class="btn btn-ghost btn-sm" href="/things?kind=medicine">{{ icon('pill') }} Medicines</a>{% endif %}
+</div>
+
+{% if role == 'patient' %}
+<div class="card" style="margin-bottom:1.25rem">
+    <div class="card-title">{{ icon('search') }} Where is my…?</div>
+    <div class="ask">
+        <input id="askText" placeholder="{{ 'e.g. Where is my blood pressure tablet?' if med else 'e.g. Where is my mouse?' }}" maxlength="200">
+        <button class="btn btn-primary" id="askBtn">Ask</button>
+        <button class="btn btn-outline" id="askMic" title="Ask by voice">{{ icon('mic') }}</button>
+    </div>
+    <div class="answer" id="answer"></div>
+</div>
+{% endif %}
+
+<div id="objects"><div class="empty-hint">Loading…</div></div>
+
+{% if role == 'patient' %}
+<div class="section-title">{{ icon('video') }} Keep an eye on my {{ 'medicines' if med else 'things' }} <span class="live" id="live">● watching</span></div>
+<div class="card watch">
+    <p class="muted" style="font-size:.86rem">Prop this phone up where it can see the room. While this page is open it looks every {{ interval_s }} seconds. Photos without one of your things are thrown away straight away.</p>
+    <video id="vid" autoplay playsinline muted></video>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn btn-primary" id="watchBtn">{{ icon('play') }} Start watching</button>
+        <button class="btn btn-ghost btn-sm" id="flipBtn">{{ icon('refresh-cw') }} Switch camera</button>
+    </div>
+    <div class="log" id="log"></div>
+</div>
+{% endif %}
+
+<div class="section-title">{{ icon('plus') }} {{ 'Add a medicine' if med else 'Add a thing' }}</div>
+<div class="card" style="max-width:620px">
+    <div class="form-group"><label for="oName">{{ 'Medicine name' if med else 'What is it?' }}</label><input id="oName" maxlength="40" placeholder="{{ 'e.g. Donepezil, BP tablets, inhaler' if med else 'e.g. keys, glasses, mouse, phone' }}"></div>
+    {% if med %}<div class="form-group"><label for="oNotes">Dose and notes (optional)</label><input id="oNotes" maxlength="200" placeholder="e.g. 10 mg after breakfast"></div>{% endif %}
+    <div class="form-group"><label for="oText">What does it look like? (optional)</label><input id="oText" maxlength="60" placeholder="{{ 'e.g. a white box with a blue strip' if med else 'e.g. a black wireless mouse' }}"></div>
+    <div class="form-group"><label>Photos of <em>this</em> one (up to 3, close-up)</label>
+        <label class="btn btn-ghost btn-sm" for="oPhotos" style="display:inline-flex;margin:0;cursor:pointer">{{ icon('image') }} Choose photos</label>
+        <input type="file" id="oPhotos" accept="image/jpeg,image/png,image/webp" capture="environment" multiple style="display:none">
+        <div class="add-prev" id="oPrev"></div>
+        <p class="hint">With photos, Memora can tell <em>this</em> {{ 'pack' if med else 'item' }} apart from others. Without photos it looks for anything that fits the description.</p>
+    </div>
+    <button class="btn btn-primary btn-block" id="addObj">{{ 'Add medicine' if med else 'Add' }}</button>
+</div>
+<canvas id="cv" style="display:none"></canvas>
+{% endblock %}
+{% block scripts %}
+<script>
+const ROLE={{ role|tojson }},KIND={{ (kind or '')|tojson }};
+const INTERVAL={{ interval_s }}*1000;
+let refFiles=[],objs=[];
+
+function drawFrame(canvas,url,box){
+    const img=new Image();
+    img.onload=()=>{canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;const c=canvas.getContext('2d');c.drawImage(img,0,0);
+        if(box){c.strokeStyle='#e7000b';c.lineWidth=Math.max(3,img.naturalWidth/160);c.strokeRect(box[0],box[1],box[2]-box[0],box[3]-box[1])}};
+    img.src=url;
+}
+async function load(){
+    const r=await api('/api/objects'+(KIND?'?kind='+KIND:''));
+    objs=Array.isArray(r)?r:[];
+    const grid=document.getElementById('objects');
+    if(!objs.length){
+        grid.innerHTML=`<div class="card empty"><span class="tile ${KIND?'t-blue':'t-purple'}">${ic(KIND?'pill':'package')}</span><h3>${KIND?'No medicines added yet':'Nothing added yet'}</h3><p>${KIND?'Add a medicine with a photo of its pack, and the phone will remember where it last saw it.':'Add keys, glasses or anything that often goes missing.'}</p></div>`;
+        return;
+    }
+    grid.innerHTML='<div class="objs">'+objs.map(o=>`<div class="card obj">
+        ${o.last_seen?`<canvas class="frame" id="f${o.id}"></canvas>`:`<div class="none">${ic('eye')}<br>Not seen yet. Start watching below.</div>`}
+        <div class="body"><h3>${ic(o.kind==='medicine'?'pill':'package')} ${esc(o.name)}<span class="refs">${o.refs.map(u=>`<img src="${esc(u)}" alt="">`).join('')}</span></h3>
+        ${o.notes?`<div class="meta">${esc(o.notes)}</div>`:''}
+        ${o.last_seen?`<div class="where">${o.last_seen.description?'It was '+esc(o.last_seen.description)+'.':'<span class="muted">Working out where that is…</span>'}</div>
+            <div class="meta">Last seen ${timeAgo(o.last_seen.seen_at)} · ${o.last_seen.method==='image'?'matched your photo':'matched by description'}</div>`:''}
+        <div style="margin-top:auto;padding-top:.5rem"><button class="btn btn-sm btn-danger-outline" onclick="delObj(${o.id})">${ic('trash-2')} Remove</button></div></div></div>`).join('')+'</div>';
+    objs.forEach(o=>{if(o.last_seen)drawFrame(document.getElementById('f'+o.id),o.last_seen.frame_url,o.last_seen.box)});
+}
+async function delObj(id){if(!confirm('Stop looking for this?'))return;await api('/api/objects/'+id,{method:'DELETE'});load()}
+
+document.getElementById('oPhotos').addEventListener('change',e=>{
+    refFiles=[...e.target.files].slice(0,3);
+    document.getElementById('oPrev').innerHTML=refFiles.map(f=>`<img src="${URL.createObjectURL(f)}" alt="">`).join('');
+});
+document.getElementById('addObj').addEventListener('click',async()=>{
+    const name=document.getElementById('oName').value.trim();
+    if(!name){toast(KIND?'Enter the medicine name':'Say what it is, e.g. keys',false);return}
+    const btn=document.getElementById('addObj'),label=btn.textContent;btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Learning what it looks like…';
+    const fd=new FormData();fd.append('name',name);fd.append('text_query',document.getElementById('oText').value.trim());
+    if(KIND){fd.append('kind',KIND);fd.append('notes',document.getElementById('oNotes').value.trim())}
+    refFiles.forEach(f=>fd.append('photos',f));
+    const r=await api('/api/objects',{method:'POST',body:fd});
+    toast(r.message,r.status==='success');
+    if(r.status==='success'){['oName','oText','oPhotos','oNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});refFiles=[];document.getElementById('oPrev').innerHTML='';load()}
+    btn.disabled=false;btn.textContent=label;
+});
+
+if(ROLE==='patient'){
+    // ---- "where is my mouse?" is answered from the last sighting by Ask Memora
+    async function ask(text){
+        if(!text)return;
+        const d=await api('/api/assistant/ask',{method:'POST',json:{text}});
+        const box=document.getElementById('answer');
+        if(d.status!=='success'){box.textContent=d.message;return}
+        box.innerHTML=esc(d.answer)+(d.images&&d.images[0]?`<img src="${esc(d.images[0])}" alt="Where it was last seen">`:'');
+        speak(d.answer);
+    }
+    document.getElementById('askBtn').addEventListener('click',()=>ask(document.getElementById('askText').value.trim()));
+    document.getElementById('askText').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('askBtn').click()});
+    const recorder=new VoiceRecorder();
+    document.getElementById('askMic').addEventListener('click',async()=>{
+        const btn=document.getElementById('askMic');
+        if(recorder.recording){
+            btn.innerHTML='<span class="spinner"></span>';
+            const fd=new FormData();fd.append('audio',await recorder.stop());
+            const d=await api('/api/stt',{method:'POST',body:fd});btn.innerHTML=ic('mic');
+            if(d.status==='success'){document.getElementById('askText').value=d.text;ask(d.text)}else toast(d.message,false);
+            return;
+        }
+        try{await recorder.start();btn.innerHTML=ic('square')}catch(e){toast('Please allow the microphone.',false)}
+    });
+
+    // ---- this phone is the camera
+    let stream=null,timer=null,facing='environment',wake=null,busy=false;
+    const log=html=>{const l=document.getElementById('log');l.insertAdjacentHTML('afterbegin',`<div>${new Date().toLocaleTimeString()} · ${html}</div>`);while(l.children.length>30)l.lastChild.remove()};
+    async function openCamera(){
+        if(stream)stream.getTracks().forEach(t=>t.stop());
+        stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:960}}});
+        document.getElementById('vid').srcObject=stream;
+    }
+    async function tick(){
+        if(busy||!stream)return;busy=true;
+        const v=document.getElementById('vid'),c=document.getElementById('cv');
+        if(v.videoWidth){
+            c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+            const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));
+            const fd=new FormData();fd.append('frame',new File([blob],'frame.jpg',{type:'image/jpeg'}));
+            const r=await api('/api/frames',{method:'POST',body:fd});
+            if(r.status!=='success')log('⚠️ '+esc(r.message));
+            else if(!r.changed)log('nothing moved');
+            else if(r.found.length){log('<strong>saw your '+r.found.map(f=>esc(f.object)).join(', ')+'</strong>');load()}
+            else log(esc(r.message||'looked, none of your things in view'));
+        }
+        busy=false;
+    }
+    document.getElementById('watchBtn').addEventListener('click',async()=>{
+        const btn=document.getElementById('watchBtn');
+        if(stream){
+            clearInterval(timer);stream.getTracks().forEach(t=>t.stop());stream=null;wake?.release?.();
+            document.getElementById('live').classList.remove('on');btn.innerHTML=ic('play')+' Start watching';log('stopped');return;
+        }
+        if(!objs.length){toast('Add one of your things first.',false);return}
+        try{await openCamera()}catch(e){toast('Please allow the camera.',false);return}
+        try{wake=await navigator.wakeLock?.request('screen')}catch(e){}
+        document.getElementById('live').classList.add('on');btn.innerHTML=ic('square')+' Stop watching';
+        log('watching');setTimeout(tick,1500);timer=setInterval(tick,INTERVAL);
+    });
+    document.getElementById('flipBtn').addEventListener('click',async()=>{facing=facing==='environment'?'user':'environment';if(stream)await openCamera()});
+}
+load();setInterval(load,30000);
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{
+  "embedder": "sface",
+  "data": "LFW DevTrain genuine pairs, probe degraded at graded strengths (never DevTest)",
+  "rule": "floor = lowest metric value where isotonic-fitted genuine acceptance >= 0.9",
+  "n_probes": 13086,
+  "acceptance_by_degradation": {
+    "dark_0": 0.987,
+    "dark_1": 0.969,
+    "dark_2": 0.856,
+    "dark_3": 0.542,
+    "blur_0": 0.984,
+    "blur_1": 0.936,
+    "blur_2": 0.442,
+    "blur_3": 0.048,
+    "lowres_0": 0.984,
+    "lowres_1": 0.971,
+    "lowres_2": 0.864,
+    "lowres_3": 0.571
+  },
+  "tuned_floors": {
+    "brightness": 21.9,
+    "sharpness": 19.1,
+    "size_px": 40,
+    "det_score": 0.8
+  },
+  "fitted_acceptance_curves": {
+    "brightness": [
+      [
+        0.9,
+        0.0
+      ],
+      [
+        5.5,
+        0.529
+      ],
+      [
+        9.28,
+        0.778
+      ],
+      [
+        13.7,
+        0.844
+      ],
+      [
+        19.6,
+        0.896
+      ],
+      [
+        28.5,
+        0.944
+      ],
+      [
+        38.7,
+        0.97
+      ],
+      [
+        56.43,
+        0.981
+      ],
+      [
+        98.52,
+        0.981
+      ],
+      [
+        121.1,
+        0.994
+      ],
+      [
+        177.6,
+        1.0
+      ]
+    ],
+    "sharpness": [
+      [
+        1.9,
+        0.0
+      ],
+      [
+        4.4,
+        0.358
+      ],
+      [
+        6.5,
+        0.675
+      ],
+      [
+        8.8,
+        0.753
+      ],
+      [
+        11.5,
+        0.806
+      ],
+      [
+        16.0,
+        0.868
+      ],
+      [
+        25.5,
+        0.936
+      ],
+      [
+        40.21,
+        0.967
+      ],
+      [
+        60.96,
+        0.967
+      ],
+      [
+        126.1,
+        0.967
+      ]
+    ]
+  },
+  "config": {
+    "embedders": [
+      "sface"
+    ],
+    "min_face_px": 40,
+    "min_det_score": 0.8,
+    "min_sharpness": 15.0,
+    "min_brightness": 35.0
+  }
+}

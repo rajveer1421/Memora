@@ -3,166 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Memora — AI Memory Care{% endblock %}</title>
-    <meta name="description" content="AI-powered memory care platform for Alzheimer's patients.">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}Memora{% endblock %}</title>
+    <meta name="description" content="Memora: a memory-care assistant for people with Alzheimer's and the family who look after them.">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="theme-color" content="#00a63e">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/static/js/memora.js"></script>
     <style>
-        :root {
-            --sage: #4a7c59;
-            --sage-soft: #8baf8d;
-            --sage-light: #e8f0e9;
-            --charcoal: #2c2c2c;
-            --grey: #6b7280;
-            --grey-light: #9ca3af;
-            --border: #e5e7eb;
-            --card: #ffffff;
-            --bg: #f8f9fa;
-            --danger: #dc3545;
-            --danger-bg: #fde8ea;
-            --gold: #d4a853;
-            --gold-bg: #fef7e6;
-            --teal: #50a096;
-            --teal-bg: #e6f5f3;
-            --purple: #7c5cbf;
-            --purple-bg: #f0ebf8;
-            --radius: 14px;
-            --radius-sm: 8px;
-            --shadow: 0 1px 3px rgba(0,0,0,0.06);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+        :root{
+            --green:#00a63e; --green-dark:#008236; --green-50:#f0fdf4; --green-100:#dcfce7; --green-200:#b9f8cf;
+            --ink:#0f172a; --text:#334155; --muted:#64748b; --faint:#94a3b8; --line:#e5eaf0; --bg:#f6f9f8; --card:#fff;
+            --red:#e7000b; --red-500:#fb2c36; --red-50:#fef2f2; --amber:#d97706; --amber-50:#fffbeb;
+            --radius:16px; --radius-sm:10px;
+            --shadow:0 1px 2px rgba(15,23,42,.04),0 2px 10px rgba(15,23,42,.05);
+            --shadow-md:0 2px 4px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.08);
+            /* older names still used by some pages */
+            --sage:var(--green); --sage-light:var(--green-50); --sage-soft:var(--green-200); --charcoal:var(--ink);
+            --grey:var(--muted); --grey-light:var(--faint); --border:var(--line); --danger:var(--red); --danger-bg:var(--red-50);
+            --gold:var(--amber); --gold-bg:var(--amber-50); --shadow-lg:var(--shadow-md);
         }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--charcoal);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
-        .container{max-width:960px;margin:0 auto;padding:1.5rem 1rem;flex:1;width:100%}
-        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:.88rem;font-weight:600;text-decoration:none;cursor:pointer;border:none;transition:all .2s;font-family:'Inter',sans-serif}
-        .btn-primary{background:var(--sage);color:#fff}
-        .btn-primary:hover{background:#3d6b4b;transform:translateY(-1px);box-shadow:0 4px 12px rgba(74,124,89,.3)}
-        .btn-outline{background:transparent;color:var(--sage);border:1.5px solid var(--sage)}
-        .btn-outline:hover{background:rgba(74,124,89,.06);transform:translateY(-1px)}
-        .btn-danger{background:var(--danger);color:#fff;border:none}
-        .btn-danger:hover{background:#c82333}
-        .btn-sm{padding:6px 14px;font-size:.78rem}
-        .btn-lg{padding:12px 26px;font-size:.92rem}
-        .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+        h1,h2,h3,h4{color:var(--ink);line-height:1.25}
+        a{color:var(--green)}
+        .i{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;vertical-align:-.2em}
+
+        /* top bar */
+        .topbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:900}
+        .topbar-in{max-width:1080px;margin:0 auto;padding:.7rem 1rem;display:flex;align-items:center;gap:1rem}
+        .brand{display:flex;align-items:center;gap:.55rem;text-decoration:none;color:var(--ink);font-weight:700;font-size:1.08rem;margin-right:auto}
+        .brand-mark{width:30px;height:30px;border-radius:9px;background:var(--green);color:#fff;display:grid;place-items:center}
+        .brand-mark .i{width:18px;height:18px}
+        .nav{display:flex;align-items:center;gap:.15rem;list-style:none}
+        .nav a,.nav .link-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .7rem;border-radius:9px;font-size:.86rem;font-weight:500;color:var(--text);text-decoration:none;background:none;border:none;font-family:inherit;cursor:pointer}
+        .nav a:hover,.nav .link-btn:hover{background:var(--bg);color:var(--ink)}
+        .nav a.active{color:var(--green);font-weight:600}
+        .nav form{display:inline}
+        .patient-pill{background:var(--green-50)!important;color:var(--green-dark)!important;font-weight:600!important;border:1px solid var(--green-100)!important}
+        .menu-btn{display:none;background:none;border:none;color:var(--ink);padding:.4rem;cursor:pointer}
+        .menu-btn .i{width:24px;height:24px}
+
+        .container{max-width:1080px;margin:0 auto;padding:1.75rem 1rem 2.5rem;flex:1;width:100%}
+        .page-head{margin-bottom:1.5rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+        .page-head h1{font-size:1.6rem;font-weight:700;letter-spacing:-.01em}
+        .page-head p{color:var(--muted);font-size:.92rem;margin-top:.2rem}
+
+        /* surfaces */
+        .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)}
+        .card-title{font-size:1.02rem;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem}
         .grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
-        .grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+        .grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
         .grid-4{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
-        .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)}
-        .nav-bar{display:flex;align-items:center;justify-content:space-between;padding:1rem 0;margin-bottom:.5rem}
-        .nav-brand{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--sage);text-decoration:none;z-index:1001}
-        .nav-links{display:flex;gap:1rem;list-style:none;align-items:center}
-        .nav-links a{font-size:.82rem;font-weight:500;color:var(--grey);text-decoration:none;transition:color .2s;padding:4px 0}
-        .nav-links a:hover,.nav-links a.active{color:var(--sage)}
-        .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;z-index:1001}
-        .hamburger span{display:block;width:22px;height:2px;background:var(--charcoal);border-radius:2px;transition:all .3s}
-        .page-head{margin-bottom:1.5rem}
-        .page-head h1{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--charcoal);margin-bottom:.25rem}
-        .page-head p{color:var(--grey);font-size:.88rem}
-        input,select,textarea{font-family:'Inter',sans-serif;font-size:.88rem;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--charcoal);width:100%;transition:border-color .2s}
-        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sage)}
-        label{display:block;font-size:.82rem;font-weight:600;color:var(--charcoal);margin-bottom:6px}
+        .section-title{font-size:1.1rem;font-weight:700;color:var(--ink);margin:1.75rem 0 .8rem;display:flex;align-items:center;gap:.5rem}
+
+        /* icon tiles in the pastel palette of the design */
+        .tile{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+        .tile .i{width:21px;height:21px}
+        .tile-lg{width:58px;height:58px;border-radius:16px}.tile-lg .i{width:28px;height:28px}
+        .t-green{background:var(--green-100);color:#16a34a}.t-blue{background:#dbeafe;color:#2563eb}.t-purple{background:#f3e8ff;color:#9333ea}
+        .t-teal{background:#ccfbf1;color:#0d9488}.t-orange{background:#ffedd5;color:#ea580c}.t-pink{background:#fce7f3;color:#db2777}
+        .t-indigo{background:#e0e7ff;color:#4f46e5}.t-red{background:#fee2e2;color:#dc2626}.t-amber{background:#fef3c7;color:#d97706}
+
+        /* action cards (dashboard care-setup grid, entry features) */
+        .action{display:flex;gap:.85rem;align-items:flex-start;padding:1rem 1.1rem;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s}
+        a.action:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--green-200)}
+        .action h3{font-size:.95rem;font-weight:600;margin-bottom:.15rem}
+        .action p{font-size:.8rem;color:var(--muted);line-height:1.45}
+
+        /* buttons */
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.65rem 1.15rem;border-radius:var(--radius-sm);font-size:.88rem;font-weight:600;text-decoration:none;cursor:pointer;border:1.5px solid transparent;transition:all .15s;font-family:inherit;line-height:1.2}
+        .btn-primary{background:var(--green);color:#fff}
+        .btn-primary:hover{background:var(--green-dark)}
+        .btn-outline{background:#fff;color:var(--green-dark);border-color:var(--green)}
+        .btn-outline:hover{background:var(--green-50)}
+        .btn-ghost{background:#fff;color:var(--text);border-color:var(--line)}
+        .btn-ghost:hover{background:var(--bg)}
+        .btn-danger{background:linear-gradient(90deg,var(--red-500),var(--red));color:#fff}
+        .btn-danger-outline{background:#fff;color:var(--red);border-color:#fecaca}
+        .btn-danger-outline:hover{background:var(--red-50)}
+        .btn-sm{padding:.4rem .8rem;font-size:.78rem;border-radius:8px}
+        .btn-lg{padding:.85rem 1.5rem;font-size:.98rem;border-radius:12px}
+        .btn-block{width:100%}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+
+        /* forms */
+        input,select,textarea{font-family:inherit;font-size:.9rem;padding:.65rem .85rem;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:#fff;color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(0,166,62,.12)}
+        input[type=checkbox]{width:auto}
+        label{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:.35rem}
         .form-group{margin-bottom:1rem}
-        .toast-box{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
-        .toast{padding:12px 20px;border-radius:10px;font-size:.85rem;font-weight:500;animation:tIn .3s ease;max-width:360px}
-        .toast-ok{background:var(--sage-light);color:var(--sage);border:1px solid var(--sage-soft)}
-        .toast-err{background:var(--danger-bg);color:var(--danger);border:1px solid #f5c6cb}
-        @keyframes tIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-        .spinner{width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--sage);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+        .hint{font-size:.78rem;color:var(--muted);margin-top:.3rem}
+        .howto{display:flex;gap:.75rem;background:var(--green-50);border:1px solid var(--green-100);border-radius:12px;padding:.9rem 1rem;font-size:.84rem;color:var(--text)}
+        .howto strong{color:var(--ink);display:block;margin-bottom:.15rem}
+
+        /* misc */
+        .avatar{border-radius:50%;display:inline-grid;place-items:center;font-weight:700;flex-shrink:0}
+        .badge{display:inline-flex;align-items:center;gap:.3rem;padding:.15rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600;background:var(--green-100);color:var(--green-dark)}
+        .badge-grey{background:#f1f5f9;color:var(--muted)}.badge-red{background:#fee2e2;color:#b91c1c}.badge-amber{background:#fef3c7;color:#92400e}
+        .empty{text-align:center;padding:2.5rem 1rem}
+        .empty .tile{margin:0 auto 1rem;width:72px;height:72px;border-radius:50%}
+        .empty .tile .i{width:32px;height:32px}
+        .empty h3{font-size:1.05rem;margin-bottom:.35rem}
+        .empty p{color:var(--muted);font-size:.88rem;margin-bottom:1.1rem}
+        .empty-hint{text-align:center;padding:1.5rem;color:var(--muted);font-size:.86rem}
+        .muted{color:var(--muted)}
+        .toast-box{position:fixed;top:4.25rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
+        .toast{padding:.75rem 1.1rem;border-radius:12px;font-size:.86rem;font-weight:500;animation:tIn .25s ease;max-width:360px;box-shadow:var(--shadow-md)}
+        .toast-ok{background:#fff;color:var(--green-dark);border:1px solid var(--green-200)}
+        .toast-err{background:#fff;color:var(--red);border:1px solid #fecaca}
+        @keyframes tIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+        .spinner{width:18px;height:18px;border:2.5px solid rgba(0,0,0,.12);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.3px}
-        .footer{text-align:center;padding:1.5rem 1rem;color:var(--grey-light);font-size:.78rem;border-top:1px solid var(--border);margin-top:2rem}
-        .footer a{color:var(--sage);text-decoration:none}
-        @media(max-width:768px){
-            .hamburger{display:flex}
-            .nav-links{position:fixed;top:0;right:-100%;width:260px;height:100vh;background:var(--card);flex-direction:column;padding:5rem 2rem 2rem;gap:1.25rem;box-shadow:var(--shadow-lg);transition:right .3s;z-index:1000}
-            .nav-links.open{right:0}
-            .nav-links a{font-size:.95rem}
-            .grid-3,.grid-4{grid-template-columns:1fr}
-            .grid-2{grid-template-columns:1fr}
+        .sheet{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:2000;padding:1rem}
+        .sheet.show{display:flex}
+        .sheet .card{max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:1.5rem;box-shadow:0 20px 50px rgba(15,23,42,.25)}
+        .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+        .sheet-head h2{font-size:1.15rem}
+        .x-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:.25rem;border-radius:8px}
+        .x-btn:hover{background:var(--bg)}
+        .demo-bar{background:var(--amber-50);color:#78350f;text-align:center;font-size:.78rem;padding:.45rem 1rem;border-bottom:1px solid #fde68a}
+        .footer{text-align:center;padding:1.5rem 1rem;color:var(--faint);font-size:.78rem;border-top:1px solid var(--line);background:#fff}
+        .footer a{color:var(--green-dark);text-decoration:none}
+        @media(max-width:860px){
+            .menu-btn{display:block}
+            .nav{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;flex-direction:column;align-items:stretch;padding:.5rem 1rem 1rem;border-bottom:1px solid var(--line);box-shadow:var(--shadow-md)}
+            .nav.open{display:flex}
+            .nav a,.nav .link-btn{padding:.7rem .6rem;font-size:.95rem;width:100%}
         }
+        @media(max-width:560px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.page-head h1{font-size:1.35rem}}
     </style>
     {% block head %}{% endblock %}
 </head>
 <body>
-    <div class="container">
-        <nav class="nav-bar">
-            <a href="/" class="nav-brand">🧠 Memora</a>
-            <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
-                <span></span><span></span><span></span>
-            </button>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/register">Register</a></li>
-                <li><a href="/recognize">Recognize</a></li>
-                <li><a href="/reminders">Reminders</a></li>
-                <li><a href="/mood">Mood</a></li>
-                <li><a href="/sos">SOS</a></li>
-                <li><a href="/dashboard">Dashboard</a></li>
-            </ul>
-        </nav>
-
-        {% block content %}
-        <style>
-            .hero{text-align:center;padding:2.5rem .5rem 2rem}
-            .hero-label{display:inline-flex;align-items:center;gap:6px;background:rgba(74,124,89,.1);color:var(--sage);padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:600;margin-bottom:1rem;letter-spacing:.3px}
-            .hero h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,6vw,3rem);line-height:1.15;letter-spacing:-.5px;color:var(--charcoal);margin-bottom:.875rem}
-            .hero h1 em{font-style:italic;color:var(--sage)}
-            .hero p{color:var(--grey);font-size:.95rem;max-width:480px;margin:0 auto 1.75rem;line-height:1.6}
-            .hero-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-            .status-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;gap:.75rem;flex-wrap:wrap;box-shadow:var(--shadow)}
-            .status-item{display:flex;align-items:center;gap:8px}
-            .status-dot{width:9px;height:9px;border-radius:50%;background:var(--sage-soft);box-shadow:0 0 0 3px rgba(139,175,141,.25);animation:pulse 2s infinite;flex-shrink:0}
-            @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(139,175,141,.25)}50%{box-shadow:0 0 0 6px rgba(139,175,141,.08)}}
-            .status-item span{font-size:.82rem;color:var(--grey)}
-            .status-item strong{color:var(--charcoal)}
-            .features-section h2{font-family:'DM Serif Display',serif;font-size:1.4rem;text-align:center;margin-bottom:1.25rem;color:var(--charcoal)}
-            .feature-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow);transition:all .22s;text-decoration:none;display:block;color:inherit}
-            .feature-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:var(--sage-soft)}
-            .feature-card:active{transform:translateY(0)}
-            .feature-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;margin-bottom:.875rem}
-            .fi-sage{background:rgba(74,124,89,.12)}.fi-rose{background:rgba(201,137,122,.12)}.fi-gold{background:rgba(212,168,83,.12)}.fi-teal{background:rgba(80,160,150,.12)}.fi-purple{background:rgba(150,100,200,.12)}
-            .feature-card h3{font-family:'DM Serif Display',serif;font-size:1rem;margin-bottom:.3rem}
-            .feature-card p{font-size:.82rem;color:var(--grey);line-height:1.5}
-            .card-arrow{margin-top:.75rem;font-size:.78rem;color:var(--sage);font-weight:600}
-        </style>
-        <div class="status-bar">
-            <div class="status-item"><div class="status-dot"></div><span>System <strong>Active</strong></span></div>
-            <div class="status-item"><span>👤 Profiles: <strong id="profile-count">—</strong></span></div>
-            <div class="status-item"><span>🔔 Today: <strong id="reminder-count">—</strong></span></div>
-            <div class="status-item"><span>📍 <strong style="color:var(--sage)">Safe Zone On</strong></span></div>
-        </div>
-        <div class="hero">
-            <div class="hero-label">🧠 AI Memory Care Platform</div>
-            <h1>Every face is a<br><em>memory worth keeping.</em></h1>
-            <p>Memora helps Alzheimer's patients reconnect with loved ones through real-time face recognition, emotional support, and intelligent care tools.</p>
-            <div class="hero-actions">
-                <a href="/recognize" class="btn btn-primary btn-lg">🔍 Start Recognition</a>
-                <a href="/register" class="btn btn-outline btn-lg">👤 Register Person</a>
-            </div>
-        </div>
-        <div class="features-section">
-            <h2>Everything in one place</h2>
-            <div class="grid-3">
-                <a href="/register" class="feature-card"><div class="feature-icon fi-sage">👤</div><h3>Face Registration</h3><p>Add family members with photos and personal voice messages.</p><div class="card-arrow">Register →</div></a>
-                <a href="/recognize" class="feature-card"><div class="feature-icon fi-rose">🔍</div><h3>Live Recognition</h3><p>Identify visitors instantly and trigger comforting voice responses.</p><div class="card-arrow">Start →</div></a>
-                <a href="/reminders" class="feature-card"><div class="feature-icon fi-gold">🔔</div><h3>Smart Reminders</h3><p>Medication, meals, and appointment reminders with voice alerts.</p><div class="card-arrow">Set reminders →</div></a>
-                <a href="/sos" class="feature-card"><div class="feature-icon fi-rose">🆘</div><h3>SOS &amp; Geofence</h3><p>Auto-alerts when the patient wanders beyond safe boundaries.</p><div class="card-arrow">Configure →</div></a>
-                <a href="/mood" class="feature-card"><div class="feature-icon fi-purple">💬</div><h3>Mood Tracking</h3><p>NLP-powered emotional state analysis from speech patterns.</p><div class="card-arrow">View log →</div></a>
-                <a href="/dashboard" class="feature-card"><div class="feature-icon fi-teal">📊</div><h3>Dashboard</h3><p>Recognition events, reminders, and mood trends at a glance.</p><div class="card-arrow">Open →</div></a>
-            </div>
-        </div>
-        <script>
-            fetch('/api/stats').then(r=>r.json()).then(d=>{
-                document.getElementById('profile-count').textContent=d.profiles??'0';
-                document.getElementById('reminder-count').textContent=d.reminders_today??'0';
-            }).catch(()=>{
-                document.getElementById('profile-count').textContent='0';
-                document.getElementById('reminder-count').textContent='0';
-            });
-        </script>
-        {% endblock %}
-    </div>
-    <footer class="footer">Memora — Built with 🤍 for Alzheimer's care &nbsp;|&nbsp; <a href="/dashboard">Dashboard</a></footer>
+    {% if demo_notice %}<div class="demo-bar">{{ demo_notice }}</div>{% endif %}
+    {% set path = request.path %}
+    <header class="topbar"><div class="topbar-in">
+        <a href="/" class="brand"><span class="brand-mark">{{ icon('brain') }}</span>Memora</a>
+        <button class="menu-btn" onclick="document.querySelector('.nav').classList.toggle('open')" aria-label="Menu">{{ icon('menu') }}</button>
+        <ul class="nav">
+            {% if role == 'caregiver' %}
+            {% for href, label in [('/dashboard','Dashboard'),('/register','People'),('/reminders','Reminders'),('/things','Things'),('/memories','Memories'),('/safety','Safety'),('/checkins','Check-ins')] %}
+            <li><a href="{{ href }}" class="{{ 'active' if path.startswith(href) }}">{{ label }}</a></li>
+            {% endfor %}
+            <li><a href="/patients" class="patient-pill" title="Switch or link a patient">{{ icon('user-round') }} {{ patient.name if patient else 'Link a patient' }}</a></li>
+            <li><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="link-btn">{{ icon('log-out') }} Sign out</button></form></li>
+            {% elif role == 'patient' %}
+            <li><a href="/patient" class="{{ 'active' if path == '/patient' }}">{{ icon('house') }} Home</a></li>
+            <li><a href="/recognize" class="{{ 'active' if path.startswith('/recognize') }}">{{ icon('scan-face') }} Who is this?</a></li>
+            <li><a href="/things" class="{{ 'active' if path.startswith('/things') }}">{{ icon('package') }} My things</a></li>
+            <li><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="link-btn">{{ icon('log-out') }} Sign out</button></form></li>
+            {% else %}
+            <li><a href="/patient/login" class="{{ 'active' if path.startswith('/patient') }}">Patient sign in</a></li>
+            <li><a href="/caregiver/login" class="{{ 'active' if path.startswith('/caregiver') }}">Caregiver sign in</a></li>
+            {% endif %}
+        </ul>
+    </div></header>
+    <main class="container">{% block content %}{% endblock %}</main>
+    <footer class="footer">Memora · memory care for people with Alzheimer's and their families · <a href="https://github.com/rajveer1421/Memora" target="_blank" rel="noopener">Source &amp; evaluation</a></footer>
+    <div class="toast-box" id="toasts"></div>
+    <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{});</script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

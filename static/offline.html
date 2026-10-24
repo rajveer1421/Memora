@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memora — offline</title>
+<style>
+  :root{--sage:#4a7c59;--bg:#f8f9fa;--text:#2c2c2c;--grey:#6b7280}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1f1c;--text:#e8ece9;--grey:#a3aaa5}}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:16px;text-align:center}
+  h1{font-size:1.6rem;margin:.5rem 0}p{color:var(--grey);font-size:1.1rem;max-width:420px;line-height:1.5}
+  button{margin-top:1rem;background:var(--sage);color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:1rem}
+</style>
+</head>
+<body>
+<main>
+  <div style="font-size:3rem">🧠</div>
+  <h1>No internet right now</h1>
+  <p>Memora will come back as soon as the connection does. You are safe. If you need help, call your family.</p>
+  <button onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

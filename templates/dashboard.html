@@ -1,111 +1,200 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — Memora{% endblock %}
+{% block title %}Dashboard · Memora{% endblock %}
 {% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-    .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-bottom:1.5rem}
-    .stat-card{text-align:center;padding:1.25rem .75rem;border-radius:var(--radius);background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);transition:transform .2s}
-    .stat-card:hover{transform:translateY(-2px)}
-    .stat-icon{font-size:1.6rem;margin-bottom:.4rem}
-    .stat-value{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--charcoal)}
-    .stat-label{font-size:.78rem;color:var(--grey);margin-top:2px}
-    .section-title{font-family:'DM Serif Display',serif;font-size:1.15rem;margin-bottom:.75rem;color:var(--charcoal)}
-    .activity-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.85rem}
-    .activity-item:last-child{border-bottom:none}
-    .activity-item:hover{background:var(--bg)}
-    .a-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-    .a-body{flex:1;min-width:0}
-    .a-body strong{font-size:.85rem}
-    .a-body span{font-size:.78rem;color:var(--grey)}
-    .a-time{font-size:.72rem;color:var(--grey-light);white-space:nowrap}
-    .chart-section{margin-top:1.5rem}
-    .bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px}
-    .bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px}
-    .bar{border-radius:4px 4px 0 0;min-height:4px;width:100%;max-width:40px;transition:height .4s ease}
-    .bar-label{font-size:.65rem;color:var(--grey);text-align:center;word-break:break-all}
-    .bar-value{font-size:.65rem;font-weight:600;color:var(--charcoal)}
-    .profiles-list{margin-top:1.5rem}
-    .profile-item{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;border-bottom:1px solid var(--border)}
-    .profile-item:last-child{border-bottom:none}
-    .profile-avatar{width:36px;height:36px;border-radius:50%;background:var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
-    .profile-name{font-weight:600;font-size:.88rem}
-    .empty-dash{text-align:center;padding:2rem;color:var(--grey)}
-    .dash-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
-    @media(max-width:640px){.dash-row{grid-template-columns:1fr}}
+    .loc{padding:0;overflow:hidden}
+    #map{height:260px;background:#e2e8f0}
+    .loc-body{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;flex-wrap:wrap}
+    .loc-body .who{flex:1;min-width:220px}
+    .loc-body h2{font-size:1.05rem}
+    .loc-meta{font-size:.8rem;color:var(--muted);display:flex;gap:.9rem;flex-wrap:wrap;margin-top:.2rem}
+    .loc-meta span{display:inline-flex;align-items:center;gap:.3rem}
+    .no-loc{position:relative}
+    .no-loc-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem;color:var(--muted);font-size:.9rem;background:rgba(246,249,248,.85);z-index:500}
+    .setup{border-color:var(--green-200)}
+    .progress{height:8px;border-radius:8px;background:var(--green-50);overflow:hidden;margin:.4rem 0 1rem}
+    .progress div{height:100%;background:var(--green);border-radius:8px;transition:width .4s}
+    .step{display:flex;align-items:center;gap:.75rem;padding:.6rem .25rem;border-bottom:1px solid var(--line);text-decoration:none;color:var(--text);font-size:.9rem}
+    .step:last-child{border-bottom:none}
+    .step .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.78rem;font-weight:700;background:#f1f5f9;color:var(--muted);flex-shrink:0}
+    .step.done{color:var(--faint);text-decoration:line-through}
+    .step.done .n{background:var(--green);color:#fff}
+    .step.next{font-weight:600;color:var(--ink)}
+    .step.next .n{background:var(--green-100);color:var(--green-dark)}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .feed{list-style:none}
+    .feed li{display:flex;gap:.75rem;padding:.7rem 0;border-bottom:1px solid var(--line);font-size:.86rem;align-items:flex-start}
+    .feed li:last-child{border-bottom:none}
+    .feed .dot{width:8px;height:8px;border-radius:50%;background:var(--green);margin-top:.45rem;flex-shrink:0}
+    .feed .dot.urgent{background:var(--red)}.feed .dot.warn{background:var(--amber)}
+    .feed .body{flex:1;min-width:0}
+    .feed time{font-size:.74rem;color:var(--faint);white-space:nowrap}
+    .alert{display:flex;gap:.75rem;align-items:flex-start;padding:.75rem 0;border-bottom:1px solid var(--line);font-size:.86rem}
+    .alert:last-child{border-bottom:none}
+    .alert.resolved{opacity:.5}
+    .alert .body{flex:1}
+    .thing{display:flex;gap:.75rem;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--line);font-size:.86rem}
+    .thing:last-child{border-bottom:none}
+    .thing img,.thing .ph{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--bg);flex-shrink:0}
+    .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.75rem;margin-bottom:1rem}
+    .stat{background:var(--bg);border-radius:12px;padding:.8rem}
+    .stat b{display:block;font-size:1.35rem;color:var(--ink)}
+    .stat span{font-size:.76rem;color:var(--muted)}
+    details.health summary{cursor:pointer;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:.5rem;list-style:none}
+    details.health summary::-webkit-details-marker{display:none}
+    .health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.75rem;margin-top:1rem}
+    .health-grid div{font-size:.8rem;color:var(--muted);background:var(--bg);border-radius:12px;padding:.8rem}
+    .health-grid strong{color:var(--ink)}
+    @media(max-width:760px){.two{grid-template-columns:1fr}}
 </style>
 {% endblock %}
-
 {% block content %}
-<div class="page-head">
-    <h1>📊 Dashboard</h1>
-    <p>Overview of patient care activity and system health.</p>
-</div>
-
-<div class="stat-grid" id="statGrid">
-    <div class="stat-card"><div class="stat-icon">👤</div><div class="stat-value" id="dProfiles">—</div><div class="stat-label">Registered Faces</div></div>
-    <div class="stat-card"><div class="stat-icon">🔔</div><div class="stat-value" id="dReminders">—</div><div class="stat-label">Active Reminders</div></div>
-    <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value" id="dMoods">—</div><div class="stat-label">Mood Entries</div></div>
-    <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value" id="dAlerts">—</div><div class="stat-label">Mood Alerts</div></div>
-</div>
-
-<div class="dash-row">
-    <div>
-        <div class="section-title">Recent Mood Entries</div>
-        <div class="card" id="recentMoods"><div class="empty-dash">Loading...</div></div>
-    </div>
-    <div>
-        <div class="section-title">Registered Profiles</div>
-        <div class="card" id="profilesList"><div class="empty-dash">Loading...</div></div>
+<div class="card loc" id="locCard">
+    <div id="mapWrap" class="no-loc"><div id="map"></div><div class="no-loc-msg" id="noLoc">No location yet. It appears here while Memora is open on {{ patient.name }}'s phone.</div></div>
+    <div class="loc-body">
+        {{ icon('map-pin') }}
+        <div class="who">
+            <h2>{{ patient.name }} <span id="zoneBadge"></span></h2>
+            <div class="loc-meta"><span>{{ icon('clock') }} <span id="locWhen">Not reported yet</span></span><span>{{ icon('navigation') }} <span id="locCoords">–</span></span></div>
+        </div>
+        <a class="btn btn-outline btn-sm" id="dirBtn" target="_blank" rel="noopener" style="display:none">{{ icon('navigation') }} Directions</a>
+        <button class="btn btn-primary btn-sm" id="resolveBtn" style="display:none">{{ icon('check') }} Resolve alert</button>
     </div>
 </div>
 
-<div class="chart-section">
-    <div class="section-title">Emotion Distribution</div>
-    <div class="card"><div class="bar-chart" id="emotionChart"></div></div>
+<div class="grid-2" style="margin-top:1rem">
+    <a class="action" href="/register"><span class="tile t-green">{{ icon('users') }}</span><div><h3>Manage people</h3><p>Add faces and voice memories</p></div></a>
+    <a class="action" href="/patients"><span class="tile t-green">{{ icon('user-plus') }}</span><div><h3>Link a patient</h3><p>Look after someone else too</p></div></a>
 </div>
+
+<div class="card setup" id="setupCard" style="display:none;margin-top:1rem">
+    <div class="card-title">{{ icon('list-checks') }} Getting started <span class="badge" id="setupCount" style="margin-left:auto"></span></div>
+    <div class="progress"><div id="setupBar" style="width:0"></div></div>
+    <div id="setupSteps"></div>
+</div>
+
+<div class="section-title">Care setup and monitoring</div>
+<div class="grid-3">
+    <a class="action" href="/things?kind=medicine"><span class="tile t-blue">{{ icon('pill') }}</span><div><h3>Manage medicines</h3><p>Medicines the phone can find again</p></div></a>
+    <a class="action" href="/reminders?type=medication"><span class="tile t-orange">{{ icon('clock') }}</span><div><h3>Medicine reminders</h3><p>Spoken on time; missed ones alert you</p></div></a>
+    <a class="action" href="/things"><span class="tile t-purple">{{ icon('package') }}</span><div><h3>Track important items</h3><p>Keys, glasses, phone: last seen</p></div></a>
+    <a class="action" href="/safety#home"><span class="tile t-teal">{{ icon('house') }}</span><div><h3>Set home location</h3><p>For "Guide me home" and "Where am I?"</p></div></a>
+    <a class="action" href="/safety"><span class="tile t-green">{{ icon('shield-check') }}</span><div><h3>Create safe zones</h3><p>Alert when they leave the area</p></div></a>
+    <a class="action" href="/memories"><span class="tile t-pink">{{ icon('heart') }}</span><div><h3>Add sweet memories</h3><p>Photos and voice messages for comfort</p></div></a>
+    <a class="action" href="/reminders?type=activity"><span class="tile t-indigo">{{ icon('calendar-days') }}</span><div><h3>Plan the day</h3><p>Meals, walks, calls, appointments</p></div></a>
+    <a class="action" href="/checkins"><span class="tile t-amber">{{ icon('message-circle-heart') }}</span><div><h3>Check-ins</h3><p>How they've been feeling</p></div></a>
+</div>
+
+<div class="two" style="margin-top:1.75rem">
+    <div class="card"><div class="card-title">{{ icon('bell') }} Alerts <span class="badge badge-red" id="openCount" style="margin-left:auto;display:none"></span></div><div id="flags"><div class="empty-hint">Loading…</div></div></div>
+    <div class="card"><div class="card-title">{{ icon('activity') }} Recent activity</div><ul class="feed" id="feed"><li class="muted">Loading…</li></ul></div>
+</div>
+
+<div class="two" style="margin-top:1rem">
+    <div class="card"><div class="card-title">{{ icon('package') }} Where things were last seen</div><div id="objects"><div class="empty-hint">Loading…</div></div></div>
+    <div class="card"><div class="card-title">{{ icon('calendar-days') }} This month</div><div class="stats" id="stats"></div></div>
+</div>
+
+<details class="card health" style="margin-top:1rem">
+    <summary>{{ icon('cpu') }} System health <span class="muted" style="font-weight:400;font-size:.82rem">· model monitoring, last 30 days</span></summary>
+    <div class="health-grid" id="health"></div>
+    <p style="margin-top:.75rem"><button class="btn btn-ghost btn-sm" onclick="enablePush()">{{ icon('bell') }} Get alerts on this device</button></p>
+</details>
 {% endblock %}
-
 {% block scripts %}
 <script>
-const EMOJIS={joy:'😊',sadness:'😢',fear:'😨',anger:'😠',surprise:'😲',disgust:'🤢',neutral:'😐'};
-const BAR_COLORS={joy:'var(--sage)',sadness:'var(--purple)',fear:'#dc3545',anger:'#e74c3c',surprise:'var(--gold)',disgust:'var(--grey)',neutral:'var(--grey-light)'};
+const FLAG_ICON={sos:['triangle-alert','t-red'],left_safe_zone:['map-pin','t-red'],distress:['message-circle-heart','t-amber'],confusion:['circle-alert','t-amber'],repeat_question:['refresh-cw','t-amber'],missed_reminder:['clock','t-orange']};
+const pct=v=>v==null?'–':Math.round(v*100)+'%';
+let map=null,layers=null,urgentOpen=[];
 
-async function loadDashboard(){
-    try{
-        let r=await fetch('/api/dashboard');let d=await r.json();
-
-        document.getElementById('dProfiles').textContent=d.total_profiles;
-        document.getElementById('dReminders').textContent=d.active_reminders+'/'+d.total_reminders;
-        document.getElementById('dMoods').textContent=d.total_mood_entries;
-        document.getElementById('dAlerts').textContent=d.mood_alerts;
-
-        let moods=document.getElementById('recentMoods');
-        if(d.recent_moods.length===0){moods.innerHTML='<div class="empty-dash">No mood data yet</div>'}
-        else{moods.innerHTML=d.recent_moods.map(m=>{
-            let dt=new Date(m.timestamp);
-            let time=dt.toLocaleDateString()+' '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-            return `<div class="activity-item"><div class="a-icon" style="background:var(--bg)">${EMOJIS[m.emotion]||'😐'}</div><div class="a-body"><strong style="text-transform:capitalize">${m.emotion}</strong> — <span>${m.text.substring(0,50)}${m.text.length>50?'...':''}</span></div><span class="a-time">${time}</span></div>`;
-        }).join('')}
-
-        let profiles=document.getElementById('profilesList');
-        if(d.profiles.length===0){profiles.innerHTML='<div class="empty-dash">No profiles registered</div>'}
-        else{profiles.innerHTML=d.profiles.map(p=>`<div class="profile-item"><div class="profile-avatar">👤</div><div class="profile-name">${p.name}</div></div>`).join('')}
-
-        let emotionCounts={};
-        if(d.recent_moods){
-            let allMoods=await fetch('/api/mood/history').then(r=>r.json());
-            allMoods.forEach(m=>{emotionCounts[m.emotion]=(emotionCounts[m.emotion]||0)+1});
-        }
-        let chart=document.getElementById('emotionChart');
-        let entries=Object.entries(emotionCounts);
-        if(entries.length===0){chart.innerHTML='<div class="empty-dash" style="width:100%">No data</div>';return}
-        let maxVal=Math.max(...entries.map(e=>e[1]),1);
-        chart.innerHTML=entries.map(([em,count])=>{
-            let h=Math.max(8,(count/maxVal)*100);
-            return `<div class="bar-col"><div class="bar-value">${count}</div><div class="bar" style="height:${h}px;background:${BAR_COLORS[em]||'var(--grey)'}"></div><div class="bar-label">${EMOJIS[em]||'?'}<br>${em}</div></div>`;
-        }).join('');
-    }catch(e){console.error(e)}
+function initMap(){
+    map=L.map('map',{zoomControl:true,attributionControl:true});
+    const street=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+    const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'});
+    L.control.layers({'Map':street,'Satellite':sat},null,{position:'topright'}).addTo(map);
+    layers=L.layerGroup().addTo(map);
+    map.setView([21.1458,79.0882],12);
+}
+function drawMap(d){
+    layers.clearLayers();
+    const pts=[];
+    (d.zones||[]).forEach(z=>{const g=L.geoJSON(z.polygon,{style:{color:'#00a63e',weight:2,fillOpacity:.08}}).addTo(layers);pts.push(...g.getLayers().flatMap(l=>l.getLatLngs().flat()))});
+    if(d.home){L.marker([d.home.lat,d.home.lon],{title:'Home'}).bindTooltip('Home'+(d.home.label?': '+esc(d.home.label):'')).addTo(layers);pts.push(L.latLng(d.home.lat,d.home.lon))}
+    const loc=d.location;
+    document.getElementById('noLoc').style.display=loc?'none':'flex';
+    if(loc){
+        const p=[loc.lat,loc.lon];
+        if(loc.accuracy_m)L.circle(p,{radius:loc.accuracy_m,color:'#e7000b',weight:1,fillOpacity:.08}).addTo(layers);
+        L.circleMarker(p,{radius:9,color:'#fff',weight:3,fillColor:'#e7000b',fillOpacity:1}).bindTooltip({{ patient.name|tojson }}).addTo(layers);
+        map.setView(p,16);
+    }else if(pts.length){map.fitBounds(L.latLngBounds(pts).pad(.3))}
 }
 
-loadDashboard();
+async function load(){
+    const d=await api('/api/dashboard');
+    if(d.status==='fail')return;
+    // ---- location card
+    if(!map)initMap();
+    drawMap(d);
+    const loc=d.location;
+    document.getElementById('locWhen').textContent=loc?'Last updated '+timeAgo(loc.created_at):'Not reported yet';
+    document.getElementById('locCoords').textContent=loc?`${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}`:'–';
+    document.getElementById('zoneBadge').innerHTML=!loc?'':loc.inside===1?'<span class="badge">Inside safe zone</span>':loc.inside===0?'<span class="badge badge-red">Outside safe zone</span>':'<span class="badge badge-grey">Zone unknown</span>';
+    const dir=document.getElementById('dirBtn');
+    if(loc){dir.href=`https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lon}`;dir.style.display=''}else dir.style.display='none';
+    urgentOpen=d.flags.filter(f=>!f.resolved_at&&(f.kind==='sos'||f.kind==='left_safe_zone'));
+    document.getElementById('resolveBtn').style.display=urgentOpen.length?'':'none';
+
+    // ---- getting started (people first, then their voice, then safety)
+    const done=d.setup.filter(s=>s.done).length,next=d.setup.find(s=>!s.done);
+    document.getElementById('setupCard').style.display=next?'':'none';
+    document.getElementById('setupCount').textContent=`${done} of ${d.setup.length} done`;
+    document.getElementById('setupBar').style.width=(100*done/d.setup.length)+'%';
+    document.getElementById('setupSteps').innerHTML=d.setup.map((s,i)=>`<a class="step ${s.done?'done':s===next?'next':''}" href="${s.href}"><span class="n">${s.done?ic('check'):i+1}</span><span style="flex:1">${esc(s.label)}</span>${s===next?ic('chevron-right'):''}</a>`).join('');
+
+    // ---- alerts
+    const open=d.flags.filter(f=>!f.resolved_at).length,oc=document.getElementById('openCount');
+    oc.textContent=open+' open';oc.style.display=open?'':'none';
+    document.getElementById('flags').innerHTML=d.flags.length?d.flags.map(f=>{const t=FLAG_ICON[f.kind]||['bell','t-amber'];
+        return `<div class="alert ${f.resolved_at?'resolved':''}"><span class="tile ${t[1]}" style="width:34px;height:34px">${ic(t[0])}</span>
+        <div class="body"><div>${esc(f.message)}</div><small class="muted">${timeAgo(f.created_at)}${f.detail&&f.detail.map?` · <a href="${esc(f.detail.map)}" target="_blank" rel="noopener">map</a>`:''}</small></div>
+        ${f.resolved_at?'':`<button class="btn btn-sm btn-ghost" onclick="resolveFlag(${f.id})">${ic('check')}</button>`}</div>`}).join('')
+        :'<div class="empty-hint">No alerts. All is calm.</div>';
+
+    // ---- recent activity
+    const tone=k=>['sos','left_safe_zone'].includes(k)?'urgent':['distress','confusion','repeat_question','missed_reminder'].includes(k)?'warn':'';
+    document.getElementById('feed').innerHTML=d.activity.length?d.activity.map(a=>`<li><span class="dot ${tone(a.kind)}"></span><span class="body">${esc(a.text)}</span><time>${timeAgo(a.at)}</time></li>`).join('')
+        :'<li class="muted">Nothing yet. Activity shows up as {{ patient.name.split()[0] }} uses Memora.</li>';
+
+    // ---- things
+    document.getElementById('objects').innerHTML=d.objects.length?d.objects.map(o=>`<div class="thing">
+        ${o.crop_url?`<img src="${esc(o.crop_url)}" alt="">`:'<div class="ph"></div>'}
+        <div style="flex:1;min-width:0"><strong>${esc(o.name)}</strong><br><small class="muted">${o.seen_at?(o.description?esc(o.description):'seen, describing where…'):'not seen yet'}</small></div>
+        <small class="muted">${o.seen_at?timeAgo(o.seen_at):''}</small></div>`).join('')
+        :'<div class="empty-hint">Nothing tracked yet. <a href="/things">Add something</a></div>';
+
+    // ---- numbers
+    document.getElementById('stats').innerHTML=`
+        <div class="stat"><b>${d.adherence_month.done}</b><span>reminders done</span></div>
+        <div class="stat"><b>${d.adherence_month.missed}</b><span>reminders missed</span></div>
+        <div class="stat"><b>${d.checkins_7d}</b><span>check-ins this week</span></div>
+        <div class="stat"><b>${d.total_profiles}</b><span>familiar faces</span></div>
+        <div class="stat"><b>${d.total_memories}</b><span>sweet memories</span></div>
+        <div class="stat"><b>${d.total_reminders}</b><span>active reminders</span></div>`;
+
+    // ---- model health (MLOps view)
+    const h=d.model_health,f=h.face;
+    document.getElementById('health').innerHTML=`
+        <div>Face recognition (${esc(f.provider)}, ${esc(f.embedder)})<br><strong>${f.requests}</strong> requests · unsure ${pct(f.unsure_rate)} · retake prompts ${pct(f.retake_rate)} · rejected ${pct(f.rejected_rate)} · median ${f.median_latency_ms??'–'} ms</div>
+        <div>Rekognition fallback<br><strong>${h.rekognition_calls_this_month} / ${h.rekognition_cap}</strong> calls this month · ${f.cloud_decisions} cloud decisions</div>
+        <div>Safe zone (${esc(h.geofence.provider)})<br><strong>${h.geofence.reports}</strong> location reports · AWS calls ${h.geofence.aws_calls_this_month}/${h.geofence.aws_cap} · AWS/local agreement ${pct(h.geofence.aws_local_agreement)}</div>
+        <div>Ask Memora<br><strong>${h.assistant.questions}</strong> questions · out-of-scope ${pct(h.assistant.out_of_scope_rate)}</div>
+        <div>Distress model<br><strong>${h.distress.utterances}</strong> utterances · flagged ${pct(h.distress.flag_rate)}</div>`;
+}
+async function resolveFlag(id){await api(`/api/flags/${id}/resolve`,{method:'POST'});load()}
+document.getElementById('resolveBtn').addEventListener('click',async()=>{for(const f of urgentOpen)await api(`/api/flags/${f.id}/resolve`,{method:'POST'});toast('Marked as resolved',true);load()});
+load();setInterval(load,30000);
 </script>
 {% endblock %}
