@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/rajveer1421/Memora/actions/workflows/tests.yml/badge.svg)](https://github.com/rajveer1421/Memora/actions/workflows/tests.yml)
 [![deploy](https://github.com/rajveer1421/Memora/actions/workflows/deploy.yml/badge.svg)](https://github.com/rajveer1421/Memora/actions/workflows/deploy.yml)
-<!-- LIVE-DEMO-BADGE -->
+[![Live demo](https://img.shields.io/badge/live%20demo-Hugging%20Face%20Space-ffcc00)](https://huggingface.co/spaces/RajTheBuilder/memora)
 
 > *Every face is a memory worth keeping.*
 
