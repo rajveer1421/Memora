@@ -8,31 +8,62 @@ Thresholds and calibration fitted on LFW DevTrain; all numbers below are on DevT
 
 | Pipeline | Accuracy (95% CI) | ROC-AUC | TAR / FAR at accept threshold | ms / face (embed) | Size | Licence |
 |---|---|---|---|---|---|---|
-| Same ArcFace-R34 + YuNet + 5-point alignment | 97.1% (96.0–98.1) | 0.996 | 88.8% / 0.0% | 106 | 130 MB | DeepFace (MIT); weights from serengil/deepface_models |
-| **SFace + YuNet (default)** | 98.9% (98.2–99.5) | 0.998 | 98.0% / 0.2% | 9 | 37 MB | Apache-2.0 (OpenCV Zoo) |
-| InsightFace MobileFaceNet + YuNet | 99.2% (98.6–99.7) | 0.998 | 99.0% / 0.4% | 12 | 13 MB | InsightFace: non-commercial research only |
-| InsightFace ResNet-50 + YuNet | 99.5% (99.0–99.9) | 0.998 | 99.4% / 0.4% | 162 | 166 MB | InsightFace: non-commercial research only |
+| Original Memora (DeepFace ArcFace-R34, Haar cascade, cosine 0.68) | 87.1% (85.0–89.2) | 0.888 | 75.8% / 1.6% | 395 (detect+embed) | – | – |
+| Same ArcFace-R34 + YuNet + 5-point alignment | 97.1% (96.0–98.1) | 0.996 | 88.8% / 0.0% | 57 | 130 MB | DeepFace (MIT); weights from serengil/deepface_models |
+| **SFace + YuNet (default)** | 98.9% (98.2–99.5) | 0.998 | 98.0% / 0.2% | 15 | 37 MB | Apache-2.0 (OpenCV Zoo) |
+| InsightFace MobileFaceNet + YuNet | 99.2% (98.6–99.7) | 0.998 | 99.0% / 0.4% | 7 | 13 MB | InsightFace: non-commercial research only |
+| InsightFace ResNet-50 + YuNet | 99.5% (99.0–99.9) | 0.998 | 99.4% / 0.4% | 201 | 166 MB | InsightFace: non-commercial research only |
 
-Detector: YuNet 2023mar (OpenCV Zoo), 8.9 ms/image; detection failures on DevTest: 0. Calibrated-probability ECE (SFace): 0.0085.
+Detector: YuNet 2023mar (OpenCV Zoo), 6.3 ms/image; detection failures on DevTest: 0. Calibrated-probability ECE (SFace): 0.0085.
 
 ### Open-set identification (how the app uses it)
 
 1 photo per person (first image); up to 4 other photos per enrolled person; 1000 people with a single LFW photo, never enrolled; 20 random draws per gallery size (95% range over draws).
 
-| Model | Gallery | Correct match | Wrong person matched | Unsure (asks / cascades) | Stranger matched as someone | Stranger 'unsure' |
-|---|---|---|---|---|---|---|
-| sface | 10 | 98.3% | 0.0% | 0.8% | 0.77% | 9.8% |
-| sface | 50 | 97.6% | 0.0% | 1.7% | 5.00% | 31.2% |
-| sface | 200 | 98.3% | 0.2% | 1.4% | 17.42% | 59.8% |
-| arcface_r34 | 10 | 86.1% | 0.0% | 12.1% | 1.66% | 9.7% |
-| arcface_r34 | 50 | 86.8% | 0.2% | 10.2% | 4.54% | 28.1% |
-| arcface_r34 | 200 | 87.9% | 0.9% | 9.7% | 15.97% | 54.2% |
-| w600k_mbf | 10 | 100.0% | 0.0% | 0.0% | 0.00% | 8.9% |
-| w600k_mbf | 50 | 99.3% | 0.1% | 0.2% | 3.72% | 32.5% |
-| w600k_mbf | 200 | 99.2% | 0.1% | 0.4% | 16.14% | 66.5% |
-| w600k_r50 | 10 | 99.7% | 0.0% | 0.3% | 1.63% | 10.1% |
-| w600k_r50 | 50 | 99.7% | 0.0% | 0.1% | 4.23% | 34.6% |
-| w600k_r50 | 200 | 99.6% | 0.1% | 0.2% | 17.44% | 65.3% |
+| Model | Threshold policy | Gallery | Correct match | Wrong person matched | Unsure (asks / cascades) | Stranger matched as someone | Stranger 'unsure' |
+|---|---|---|---|---|---|---|---|
+| sface | scaled with gallery (app) | 10 | 98.3% | 0.0% | 0.8% | 0.77% | 9.8% |
+| sface | scaled with gallery (app) | 50 | 97.0% | 0.0% | 1.3% | 1.29% | 8.2% |
+| sface | scaled with gallery (app) | 200 | 96.8% | 0.0% | 1.3% | 1.28% | 7.9% |
+| sface | fixed (ablation) | 10 | 98.3% | 0.0% | 0.8% | 0.77% | 9.8% |
+| sface | fixed (ablation) | 50 | 97.6% | 0.0% | 1.7% | 5.00% | 31.2% |
+| sface | fixed (ablation) | 200 | 98.3% | 0.2% | 1.4% | 17.42% | 59.8% |
+| arcface_r34 | scaled with gallery (app) | 10 | 86.1% | 0.0% | 12.1% | 1.66% | 9.7% |
+| arcface_r34 | scaled with gallery (app) | 50 | 77.0% | 0.0% | 12.9% | 0.89% | 7.6% |
+| arcface_r34 | scaled with gallery (app) | 200 | 68.3% | 0.1% | 17.4% | 0.71% | 7.1% |
+| arcface_r34 | fixed (ablation) | 10 | 86.1% | 0.0% | 12.1% | 1.66% | 9.7% |
+| arcface_r34 | fixed (ablation) | 50 | 86.8% | 0.2% | 10.2% | 4.54% | 28.1% |
+| arcface_r34 | fixed (ablation) | 200 | 87.9% | 0.9% | 9.7% | 15.97% | 54.2% |
+| w600k_mbf | scaled with gallery (app) | 10 | 100.0% | 0.0% | 0.0% | 0.00% | 8.9% |
+| w600k_mbf | scaled with gallery (app) | 50 | 98.9% | 0.0% | 0.5% | 1.18% | 7.5% |
+| w600k_mbf | scaled with gallery (app) | 200 | 98.6% | 0.1% | 0.5% | 1.75% | 8.2% |
+| w600k_mbf | fixed (ablation) | 10 | 100.0% | 0.0% | 0.0% | 0.00% | 8.9% |
+| w600k_mbf | fixed (ablation) | 50 | 99.3% | 0.1% | 0.2% | 3.72% | 32.5% |
+| w600k_mbf | fixed (ablation) | 200 | 99.2% | 0.1% | 0.4% | 16.14% | 66.5% |
+| w600k_r50 | scaled with gallery (app) | 10 | 99.7% | 0.0% | 0.3% | 1.63% | 10.1% |
+| w600k_r50 | scaled with gallery (app) | 50 | 99.7% | 0.0% | 0.1% | 0.52% | 9.3% |
+| w600k_r50 | scaled with gallery (app) | 200 | 99.4% | 0.0% | 0.2% | 0.76% | 8.3% |
+| w600k_r50 | fixed (ablation) | 10 | 99.7% | 0.0% | 0.3% | 1.63% | 10.1% |
+| w600k_r50 | fixed (ablation) | 50 | 99.7% | 0.0% | 0.1% | 4.23% | 34.6% |
+| w600k_r50 | fixed (ablation) | 200 | 99.6% | 0.1% | 0.2% | 17.44% | 65.3% |
+
+Policies: **scaled**: per-comparison FAR = 0.01 / gallery size (the app); **fixed**: fixed per-comparison FAR 0.1% (ablation)
+
+### Quality floors (tuned on DevTrain, never DevTest)
+
+floor = lowest metric value where isotonic-fitted genuine acceptance >= 0.9; 13086 degraded DevTrain probes. Tuned floors: {'brightness': 21.9, 'sharpness': 19.1, 'size_px': 40, 'det_score': 0.8}. Genuine acceptance by degradation strength: {'dark_0': 0.987, 'dark_1': 0.969, 'dark_2': 0.856, 'dark_3': 0.542, 'blur_0': 0.984, 'blur_1': 0.936, 'blur_2': 0.442, 'blur_3': 0.048, 'lowres_0': 0.984, 'lowres_1': 0.971, 'lowres_2': 0.864, 'lowres_3': 0.571}.
+
+### Robustness: block vs explain on low-quality photos
+
+**block** = refuse dark/blurry photos (the original gate); **explain** = always recognise and turn a non-match on a dark/blurry photo into a 'retake' prompt (the app). Probe degraded; DevTest pairs.
+
+| Model | Condition | Flagged dark/blurry | TAR explain | TAR block | FAR explain | FAR block | Failures given a retake prompt |
+|---|---|---|---|---|---|---|---|
+| sface | clean | 0.1% | 98.0% | 98.0% | 0.20% | 0.20% | 0.0% |
+| sface | dark | 17.2% | 96.4% | 81.6% | 0.00% | 0.00% | 22.2% |
+| sface | blur | 85.8% | 97.0% | 13.2% | 0.00% | 0.00% | 80.0% |
+| sface | lowres | 24.5% | 97.4% | 75.0% | 0.00% | 0.00% | 46.2% |
+| sface | jpeg | 0.0% | 97.0% | 97.0% | 0.20% | 0.20% | 0.0% |
 
 ## Ask Memora intent classifier
 
@@ -46,6 +77,22 @@ Detector: YuNet 2023mar (OpenCV Zoo), 8.9 ms/image; detection failures on DevTes
 | minilm_logreg without OOS threshold (ablation) | 83.7% (75.6–90.7) | 0.850 (76.5–91.5) | 78% | 1 |
 
 Accuracy by phrasing style (ours): fragment 80% (n=5), hinglish 11% (n=9), indian-english 100% (n=2), indirect 100% (n=1), natural 92% (n=62), rambling 100% (n=3), typo 75% (n=4)
+
+## Check-in distress / emotion classifier
+
+Care-context set: 140 sentences (71 distress; author-written sentences (not patient data); small, so confidence intervals are wide). GoEmotions test: 5427 comments. Script: `eval/distress_eval.py`.
+
+| Model | Care: distress P / R | Care: distress F1 (95% CI) | Care: false alarms | Care: emotion acc. | GoEmotions: distress F1 |
+|---|---|---|---|---|---|
+| keyword engine (original) | 0.54 / 0.31 | 0.393 (27.5–50.4) | 19 | 39.3% | 0.272 |
+| tfidf + logreg | 0.76 / 0.66 | 0.707 (61.3–78.6) | 15 | 51.4% | 0.591 |
+| SamLowe/roberta-base-go_emotions (pretrained, used directly: the app) | 0.91 / 0.86 | 0.884 (82.1–93.7) | 6 | 63.6% | 0.660 |
+| j-hartmann distilroberta (off-the-shelf, 7 classes) | 0.81 / 0.73 | 0.770 (68.2–84.2) | 12 | 66.4% | n/a (in its training data) |
+
+- keyword engine (original): confusion 28%, indian_english 62%, keyword_trap 40%, negation 20%, plain 65%
+- tfidf + logreg: confusion 44%, indian_english 75%, keyword_trap 80%, negation 33%, plain 84%
+- SamLowe/roberta-base-go_emotions (pretrained, used directly: the app): confusion 89%, indian_english 75%, keyword_trap 85%, negation 80%, plain 92%
+- j-hartmann distilroberta (off-the-shelf, 7 classes): confusion 22%, indian_english 88%, keyword_trap 90%, negation 53%, plain 91%
 
 ## Object finder
 

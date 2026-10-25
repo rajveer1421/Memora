@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 get_api.md
+github.md
 notes/
 *.private.md
 
